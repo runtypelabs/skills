@@ -1,0 +1,10 @@
+{
+  "name": "runtype-skills",
+  "displayName": "Runtype Skills",
+  "description": "Skills for building, managing, and shipping AI products on the Runtype platform.",
+  "version": "0.1.0",
+  "publisher": "runtypelabs",
+  "repository": "https://github.com/runtypelabs/skills",
+  "license": "MIT",
+  "skills": "skills/"
+}
