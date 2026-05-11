@@ -22,7 +22,7 @@ npx skills add runtypelabs/skills --list
 
 | Skill | Description |
 |-------|-------------|
-| *Coming soon* | New skills will be added here as they're authored. |
+| [`runtype`](skills/runtype/) | Build, deploy, and operate hosted AI products on Runtype — agents, flows, surfaces (Slack/email/SMS/MCP/webhooks/chat widget/etc.), records, schedules, and evals. Covers the dashboard, REST, MCP (`api.runtype.com/v1/mcp/protocol`), and SDK working modes. |
 
 ## Authoring a New Skill
 

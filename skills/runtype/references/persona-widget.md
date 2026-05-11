@@ -1,0 +1,284 @@
+# Persona Chat Widget
+
+Persona (`@runtypelabs/persona`) is the SDK behind the embeddable chat UI for any Runtype agent or flow surface of type `chat`.
+
+When asked to generate embed code, prefer calling `generate_persona_embed_code` on the MCP server — it returns a tested, current snippet. Only hand-write embed code when the MCP tool is unavailable. When hand-writing, follow this guide exactly.
+
+## Critical common mistakes
+
+These are the errors most agents make. Read this section first.
+
+- **Package name**: `@runtypelabs/persona` — NOT `@runtype/persona`.
+- **Global script file**: `install.global.js` — NOT `index.umd.js`.
+- **API**: `initAgentWidget()` — NOT `Persona.mount()`, `window.Persona`, `window.RuntypePersona`. These don't exist.
+- **CSS**: When using ESM/manual setup, you **must** load `widget.css`. The script installer handles this automatically.
+- **Ready event**: `persona:ready` — NOT `widget:ready` or `agentwidget:ready`.
+
+## CDN base URL
+
+```
+https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist
+```
+
+## Three integration options
+
+### Option 1: Script installer (simplest)
+
+One script tag, no CSS import needed.
+
+```html
+<script
+  src="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/install.global.js"
+  data-runtype-token="YOUR_SURFACE_KEY"
+></script>
+```
+
+To mount in a specific container:
+
+```html
+<div id="chat"></div>
+<script
+  src="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/install.global.js"
+  data-runtype-token="YOUR_SURFACE_KEY"
+  data-config='{"target":"#chat","apiUrl":"https://api.runtype.com"}'
+></script>
+```
+
+### Option 2: ESM / manual
+
+Full control. Requires loading `widget.css` separately.
+
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/widget.css" />
+<div id="chat"></div>
+<script type="module">
+import { initAgentWidget, markdownPostprocessor } from 'https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/index.js';
+
+initAgentWidget({
+  target: '#chat',
+  config: {
+    apiUrl: 'https://api.runtype.com',
+    clientToken: 'YOUR_SURFACE_KEY',
+    parserType: 'json',
+    postprocessMessage: ({ text }) => markdownPostprocessor(text),
+    launcher: {
+      enabled: true,
+      title: 'Chat',
+      subtitle: 'How can I help you today?',
+      position: 'bottom-right',
+    },
+  },
+});
+</script>
+```
+
+### Option 3: npm / React
+
+```bash
+npm install @runtypelabs/persona
+```
+
+```ts
+import "@runtypelabs/persona/widget.css";
+import { DEFAULT_WIDGET_CONFIG, initAgentWidget, markdownPostprocessor } from "@runtypelabs/persona";
+
+initAgentWidget({
+  target: '#chat',
+  config: {
+    ...DEFAULT_WIDGET_CONFIG,
+    apiUrl: 'https://api.runtype.com',
+    clientToken: 'YOUR_SURFACE_KEY',
+    parserType: 'json',
+    postprocessMessage: ({ text }) => markdownPostprocessor(text),
+  },
+});
+```
+
+## Config reference
+
+| Property | Type | Notes |
+|---|---|---|
+| `target` | string \| HTMLElement | CSS selector or DOM element |
+| `useShadowDom` | boolean | Style isolation (default false) |
+| `config.apiUrl` | string | `https://api.runtype.com` (or staging URL) |
+| `config.clientToken` | string | Surface key from Runtype dashboard |
+| `config.parserType` | `'json'` | Always `'json'` for Runtype streams |
+| `config.postprocessMessage` | function | Use `markdownPostprocessor` for rich text |
+| `config.launcher` | object | `{ enabled, title, subtitle, position }` |
+| `config.colorScheme` | `'light' \| 'dark' \| 'auto'` | Theme mode |
+| `config.theme` | `DeepPartial<PersonaTheme>` | Light theme overrides |
+| `config.darkTheme` | `DeepPartial<PersonaTheme>` | Dark theme overrides |
+| `windowKey` | string | Stores handle on `window[windowKey]` for programmatic access |
+| `onReady` | `(handle) => void` | Callback after init (install script only) |
+
+## Programmatic access
+
+Three ways. Pick by context.
+
+**Script installer with `windowKey`:**
+```html
+<script
+  src=".../install.global.js"
+  data-runtype-token="YOUR_SURFACE_KEY"
+  data-config='{"windowKey":"myChat"}'
+></script>
+```
+
+**`onReady` callback (via `window.siteAgentConfig`):**
+```html
+<script>
+  window.siteAgentConfig = {
+    clientToken: 'YOUR_SURFACE_KEY',
+    windowKey: 'myChat',
+    onReady(handle) {
+      handle.on('message:sent', (e) => console.log('sent:', e));
+    }
+  };
+</script>
+<script src=".../install.global.js"></script>
+```
+
+**`persona:ready` event** (works from any script, including separately-loaded ones):
+```html
+<script>
+  window.addEventListener('persona:ready', (e) => {
+    const handle = e.detail;
+    handle.open();
+  });
+</script>
+```
+
+## Theme contrast rules (critical)
+
+Don't trust palette scale steps (`primary.50`, `primary.500`) to give you contrast automatically. Compute contrast on the **final resolved colors** for each foreground/background pair, in both light and dark themes.
+
+For both `config.theme` and `config.darkTheme`:
+
+- `components.header.titleForeground` and `subtitleForeground` need **≥4.5:1** contrast against `components.header.background`.
+- `components.header.actionIconForeground` and `iconForeground` need **≥3:1** contrast against the surface they sit on.
+- `components.header.iconBackground` should be visually distinct from `header.background`.
+- Apply the same logic to `components.launcher.foreground`, `components.message.user.text`, `components.button.primary.foreground` against their respective backgrounds.
+- Prefer explicit solid hex foreground colors over semi-transparent `rgba(...)` unless you've verified the composited contrast ratio.
+
+Dark header → use `#ffffff` or `#f5f5f5` for foregrounds.
+Light header → use `#111827` or `#1f2937`.
+
+Before generating any custom theme, call `get_persona_theme_reference` to get the design-token docs and example themes — these are your starting points, not your fallbacks.
+
+## Tool calls and reasoning bubbles
+
+Three control layers: **visibility**, **behavior**, **styling**.
+
+### Visibility
+
+```ts
+config: {
+  features: {
+    showToolCalls: true,
+    showReasoning: true,
+  }
+}
+```
+
+Set to `false` for consumer-facing widgets. Leave on for dev/debug surfaces.
+
+### Behavior
+
+Tool calls — `config.features.toolCallDisplay`:
+- `expandable`: when `false`, collapsed summary only
+- `collapsedMode`: `"tool-call"` | `"tool-name"` | `"tool-preview"`
+- `activePreview`: live preview during execution
+- `previewMaxLines`, `activeMinHeight`, `grouped`
+
+Reasoning — `config.features.reasoningDisplay`:
+- `expandable`, `activePreview`, `previewMaxLines`, `activeMinHeight`
+
+### Visual styling
+
+Three levels:
+
+**1. Shared chrome via `components.collapsibleWidget`:**
+```ts
+theme: {
+  components: {
+    collapsibleWidget: {
+      container: "palette.colors.gray.50",
+      surface: "semantic.colors.surface",
+      border: "semantic.colors.border",
+    }
+  }
+}
+```
+
+**2. Per-bubble shadow tokens:**
+```ts
+theme: {
+  components: {
+    toolBubble: { shadow: "palette.shadows.sm" },
+    reasoningBubble: { shadow: "palette.shadows.sm" }
+  }
+}
+```
+
+Use `"none"` for flat callouts.
+
+**3. Imperative tool-call overrides via `config.toolCall`:**
+Properties include `shadow`, `backgroundColor`, `borderColor`, `borderRadius`, `headerBackgroundColor`, `headerTextColor`, `contentBackgroundColor`, `contentTextColor`, `codeBlockBackgroundColor`, etc.
+
+Reasoning bubbles do **not** have an imperative override layer. Style them via theme tokens only (especially `components.collapsibleWidget` and `components.reasoningBubble`).
+
+### Contrast rules for bubbles
+
+- Bubble background must contrast with the surrounding chat surface.
+- Header text and toggle icons must be readable against the header background.
+- If you set `config.toolCall.headerBackgroundColor`, explicitly set `headerTextColor` and `toggleTextColor`.
+- Labels like "Arguments", "Result", "Activity" must remain readable.
+- Code block text must contrast against code block background.
+
+### Common recipes
+
+Hidden internals (consumer-facing):
+```ts
+config: { features: { showToolCalls: false, showReasoning: false } }
+```
+
+Visible but not expandable:
+```ts
+config: {
+  features: {
+    toolCallDisplay: { expandable: false },
+    reasoningDisplay: { expandable: false }
+  }
+}
+```
+
+Flat minimal callouts:
+```ts
+theme: {
+  components: {
+    toolBubble: { shadow: "none" },
+    reasoningBubble: { shadow: "none" },
+    collapsibleWidget: {
+      container: "#f8f9fa",
+      surface: "#ffffff",
+      border: "#e9ecef"
+    }
+  }
+}
+```
+
+## Fullscreen AI-assistant layouts
+
+For ChatGPT/Claude-style fullscreen split-pane layouts (chat on left, artifacts on right), read the `runtype://guide/persona-fullscreen-assistant` MCP resource. It covers the non-default `launcher.fullHeight`, panel-chrome removal, split artifact pane, document toolbar preset, custom composer plugin, and the dark palette those UIs use.
+
+## Generating artifacts that embed the widget
+
+When generating standalone HTML files or Claude artifacts that embed the widget:
+
+1. Use the **script installer** approach for simplicity.
+2. For more control, use **ESM** — and include `widget.css`.
+3. `clientToken` / `data-runtype-token` is the surface key from the Runtype dashboard or `create_client_token`.
+4. API URL is `https://api.runtype.com` (or environment-appropriate).
+5. Don't invent APIs. The only init function is `initAgentWidget()`. The only ready event is `persona:ready`.
+6. For custom themes, call `get_persona_theme_reference` first; set explicit high-contrast component tokens.
+7. For programmatic access, use `windowKey` + the `persona:ready` listener.
