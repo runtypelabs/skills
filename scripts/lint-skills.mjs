@@ -93,6 +93,10 @@ function checkLinkedReferences(skillDir, text, file) {
   }
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function checkOpenAiYaml(skillName, skillDir) {
   const file = path.join(skillDir, 'agents/openai.yaml')
   if (!exists(file)) {
@@ -103,7 +107,10 @@ function checkOpenAiYaml(skillName, skillDir) {
   for (const key of ['display_name:', 'short_description:', 'default_prompt:']) {
     if (!text.includes(key)) failures.push(`${file}: missing interface.${key.replace(':', '')}`)
   }
-  if (!text.includes(`$${skillName}`)) {
+  const skillTokenPattern = new RegExp(
+    `(^|[^A-Za-z0-9_-])\\$${escapeRegExp(skillName)}(?![A-Za-z0-9_-])`
+  )
+  if (!skillTokenPattern.test(text)) {
     failures.push(`${file}: default_prompt must mention $${skillName}`)
   }
 }
