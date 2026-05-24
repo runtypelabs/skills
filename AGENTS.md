@@ -38,7 +38,7 @@ Agent instructions go here.
 - **`name` must match the directory name** — `skills/foo-bar/SKILL.md` needs `name: foo-bar`
 - **Keep SKILL.md under 500 lines / 5,000 tokens** — this is the activation budget. Move API specs, schemas, and detailed docs to `references/`
 - **Description is the trigger** — it's loaded at session start for all installed skills. Write it so the agent knows *when* to activate. "Use when the user mentions X, Y, or Z" is the pattern
-- **No secrets or internal URLs** — this repo is intended to go public. No API keys, no `*.runtype-staging.com` URLs, no internal service names
+- **No secrets or internal URLs** — this repo is intended to go public. No API keys, internal staging hostnames, or internal service names
 - **Runtype-specific is fine** — these skills target Runtype users. Reference Runtype CLI commands, SDK methods, API endpoints, and platform concepts freely
 - **Scripts go in `scripts/`** — if the skill needs a helper the agent would otherwise reinvent each time, bundle it as an executable script and reference it via `${CLAUDE_SKILL_DIR}/scripts/helper.sh`
 - **Favor procedures over declarations** — teach *how to approach* a class of problems, not *what to produce* for a specific instance

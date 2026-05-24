@@ -152,7 +152,9 @@ function allSkillText(files) {
 }
 
 function extractArrayStrings(text, constName) {
-  const block = text.match(new RegExp(`const ${constName}:[\\s\\S]*?= \\[([\\s\\S]*?)\\]`, 'm'))
+  const block = text.match(
+    new RegExp(`(?:export\\s+)?const\\s+${constName}\\b[^=]*=\\s*\\[([\\s\\S]*?)\\]`, 'm')
+  )
   if (!block) return []
   return [...block[1].matchAll(/'([^']+)'/g)].map((match) => match[1])
 }
@@ -455,6 +457,7 @@ for (const skill of files) {
 
 for (const file of [
   path.join(root, 'README.md'),
+  path.join(root, 'AGENTS.md'),
   path.join(root, '.claude-plugin/plugin.json'),
   path.join(root, '.codex-plugin/plugin.json'),
   ...filesInDir(path.join(root, 'docs')),
