@@ -7,3 +7,5 @@
 - [ ] Detailed reference material is in `references/`, not inline
 - [ ] No secrets, API keys, or internal URLs in skill content
 - [ ] README.md skills table updated
+- [ ] `node scripts/lint-skills.mjs` passes
+- [ ] Code-derived Runtype facts were checked against current `core` sources or live MCP docs

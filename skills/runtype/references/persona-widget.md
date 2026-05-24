@@ -20,6 +20,10 @@ These are the errors most agents make. Read this section first.
 https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist
 ```
 
+## Client token
+
+Persona uses a `clientToken`, created with `create_client_token`, for browser-side chat access. This is not a surface key. Client tokens are public, scoped to specific agents or flows, and can be constrained with origin and rate-limit settings.
+
 ## Three integration options
 
 ### Option 1: Script installer (simplest)
@@ -29,7 +33,7 @@ One script tag, no CSS import needed.
 ```html
 <script
   src="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/install.global.js"
-  data-runtype-token="YOUR_SURFACE_KEY"
+  data-runtype-token="YOUR_CLIENT_TOKEN"
 ></script>
 ```
 
@@ -39,7 +43,7 @@ To mount in a specific container:
 <div id="chat"></div>
 <script
   src="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/install.global.js"
-  data-runtype-token="YOUR_SURFACE_KEY"
+  data-runtype-token="YOUR_CLIENT_TOKEN"
   data-config='{"target":"#chat","apiUrl":"https://api.runtype.com"}'
 ></script>
 ```
@@ -58,7 +62,7 @@ initAgentWidget({
   target: '#chat',
   config: {
     apiUrl: 'https://api.runtype.com',
-    clientToken: 'YOUR_SURFACE_KEY',
+    clientToken: 'YOUR_CLIENT_TOKEN',
     parserType: 'json',
     postprocessMessage: ({ text }) => markdownPostprocessor(text),
     launcher: {
@@ -87,7 +91,7 @@ initAgentWidget({
   config: {
     ...DEFAULT_WIDGET_CONFIG,
     apiUrl: 'https://api.runtype.com',
-    clientToken: 'YOUR_SURFACE_KEY',
+    clientToken: 'YOUR_CLIENT_TOKEN',
     parserType: 'json',
     postprocessMessage: ({ text }) => markdownPostprocessor(text),
   },
@@ -100,8 +104,8 @@ initAgentWidget({
 |---|---|---|
 | `target` | string \| HTMLElement | CSS selector or DOM element |
 | `useShadowDom` | boolean | Style isolation (default false) |
-| `config.apiUrl` | string | `https://api.runtype.com` (or staging URL) |
-| `config.clientToken` | string | Surface key from Runtype dashboard |
+| `config.apiUrl` | string | `https://api.runtype.com` (or another configured Runtype API URL) |
+| `config.clientToken` | string | Browser-safe client token from `create_client_token` |
 | `config.parserType` | `'json'` | Always `'json'` for Runtype streams |
 | `config.postprocessMessage` | function | Use `markdownPostprocessor` for rich text |
 | `config.launcher` | object | `{ enabled, title, subtitle, position }` |
@@ -119,7 +123,7 @@ Three ways. Pick by context.
 ```html
 <script
   src=".../install.global.js"
-  data-runtype-token="YOUR_SURFACE_KEY"
+  data-runtype-token="YOUR_CLIENT_TOKEN"
   data-config='{"windowKey":"myChat"}'
 ></script>
 ```
@@ -128,7 +132,7 @@ Three ways. Pick by context.
 ```html
 <script>
   window.siteAgentConfig = {
-    clientToken: 'YOUR_SURFACE_KEY',
+    clientToken: 'YOUR_CLIENT_TOKEN',
     windowKey: 'myChat',
     onReady(handle) {
       handle.on('message:sent', (e) => console.log('sent:', e));
@@ -277,7 +281,7 @@ When generating standalone HTML files or Claude artifacts that embed the widget:
 
 1. Use the **script installer** approach for simplicity.
 2. For more control, use **ESM** — and include `widget.css`.
-3. `clientToken` / `data-runtype-token` is the surface key from the Runtype dashboard or `create_client_token`.
+3. `clientToken` / `data-runtype-token` is the browser-safe client token from `create_client_token`.
 4. API URL is `https://api.runtype.com` (or environment-appropriate).
 5. Don't invent APIs. The only init function is `initAgentWidget()`. The only ready event is `persona:ready`.
 6. For custom themes, call `get_persona_theme_reference` first; set explicit high-contrast component tokens.

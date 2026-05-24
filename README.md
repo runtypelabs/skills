@@ -22,7 +22,24 @@ npx skills add runtypelabs/skills --list
 
 | Skill | Description |
 |-------|-------------|
-| [`runtype`](skills/runtype/) | Build, deploy, and operate hosted AI products on Runtype — agents, flows, surfaces (Slack/email/SMS/MCP/webhooks/chat widget/etc.), records, schedules, and evals. Covers the dashboard, REST, MCP (`api.runtype.com/v1/mcp/protocol`), and SDK working modes. |
+| [`runtype`](skills/runtype/) | Umbrella onboarding and routing skill for Runtype setup, capability scoping, and choosing the right focused workflow. |
+| [`runtype-build-product`](skills/runtype-build-product/) | Build and validate hosted Runtype products with agents, flows, tools, surfaces, records, schedules, secrets, and evals. |
+| [`runtype-admin`](skills/runtype-admin/) | Operate live Runtype accounts safely through MCP or Code Mode MCP: inspect resources, debug traces, logs, evals, and apply careful mutations. |
+| [`runtype-persona`](skills/runtype-persona/) | Embed, theme, and debug Persona chat widgets, fullscreen assistants, client tokens, artifacts, and browser-side local tools. |
+| [`runtype-templates`](skills/runtype-templates/) | Create, validate, and package distributable Runtype FPO templates with pending secrets and import readiness checks. |
+| [`runtype-sdk-marathon`](skills/runtype-sdk-marathon/) | Use the Runtype SDK, CLI, Marathon, playbooks, sandboxes, and code-first stored/upsert/virtual workflows. |
+
+## Validation
+
+Run the repository skill lint before publishing:
+
+```bash
+node scripts/lint-skills.mjs
+```
+
+The lint checks frontmatter, description length, linked references, forbidden internal URLs, common secret leaks, semantic guardrails for drift-prone claims, and extra drift against the neighboring `../core` monorepo when it is present.
+
+For the recommended private-source/public-publish workflow, see [Keeping Runtype Skills in Sync](docs/keeping-skills-in-sync.md).
 
 ## Authoring a New Skill
 

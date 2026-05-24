@@ -19,7 +19,7 @@ Best for:
 
 ### MCP server (`https://api.runtype.com/v1/mcp/protocol`)
 
-For driving Runtype from inside an LLM agent harness (Claude Code, Cursor, Claude Desktop, any MCP client). 100+ tools covering everything the dashboard does.
+For driving Runtype from inside an LLM agent harness (Claude Code, Cursor, Claude Desktop, any MCP client). 100+ tools cover the main product-building and operations workflows exposed by the platform.
 
 Best for:
 - Building with an AI pair. The agent has full read/write access to your workspace.
@@ -30,7 +30,7 @@ Setup: `mcpServers.runtype.url = "https://api.runtype.com/v1/mcp/protocol"`. OAu
 
 ### REST API
 
-100% API coverage. Use from any code.
+Broad API coverage for using Runtype from any code.
 
 Best for:
 - Embedding Runtype-driven AI features in an existing product.
@@ -94,7 +94,7 @@ The platform is built as a **library plus adapters**. The library is the agent/f
 What on-prem unlocks:
 - Production artifacts run on your AWS / GCP / on-prem infrastructure.
 - Connect to your own model providers — your own API keys, your own gateway, even local models.
-- Zero telemetry. No phone home. Runtype has no awareness of production data or execution.
+- Standalone deployments can run silent by omitting or disabling telemetry. If telemetry is enabled, configure the endpoint and API key explicitly.
 - Compliance-friendly: data residency, audit, key management can all be self-managed.
 
 The expected **graduation pattern**:
