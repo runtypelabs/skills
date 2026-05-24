@@ -98,4 +98,6 @@ completion criteria, and rules.
 Use playbooks when the task has durable phases such as research, build, verify, and
 polish. Keep rules explicit about file scope, verification, and deployment expectations.
 
-See `../runtype/references/working-modes.md` for fallback mode guidance.
+If the umbrella `runtype` skill is installed alongside this focused skill, its durable
+references provide deeper working-mode guidance. This skill must still work when
+installed by itself; prefer live MCP docs over local sibling files.

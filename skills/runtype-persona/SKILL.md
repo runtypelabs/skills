@@ -71,5 +71,6 @@ Good local tool examples:
 - Open a modal or fill a safe form.
 - Read browser-only state that has no server API.
 
-See `../runtype/references/persona-widget.md` for fallback snippets and gotchas, and
-`../runtype/references/working-modes.md` for local tool tradeoffs.
+If the umbrella `runtype` skill is installed alongside this focused skill, its durable
+references provide fallback snippets and working-mode tradeoffs. This skill must still
+work when installed by itself; prefer live MCP docs over local sibling files.

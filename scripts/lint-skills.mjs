@@ -2,8 +2,9 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 
-const root = path.resolve(new URL('..', import.meta.url).pathname)
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const skillsDir = path.join(root, 'skills')
 const coreDir = path.resolve(root, '../core')
 
@@ -16,6 +17,14 @@ function read(file) {
 
 function exists(file) {
   return fs.existsSync(file)
+}
+
+function filesInDir(dir) {
+  if (!exists(dir)) return []
+  return fs
+    .readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => path.join(dir, entry.name))
 }
 
 function parseFrontmatter(text, file) {
@@ -289,7 +298,7 @@ function checkSemanticAssertions() {
 
   failIfMatches(
     docs.recipes,
-    /`maxTurns`: 5|short-lived|`behavior` lists the tools to expose/i,
+    /`maxTurns`: 5|client token[^.\n]*short-lived|short-lived[^.\n]*(?:clientToken|client token)|`behavior` lists the tools to expose/i,
     'recipe guidance contains an outdated MCP, agent-loop, or client-token assertion'
   )
   requireText(
@@ -376,15 +385,8 @@ for (const file of [
   path.join(root, 'README.md'),
   path.join(root, '.claude-plugin/plugin.json'),
   path.join(root, '.codex-plugin/plugin.json'),
-  ...(exists(path.join(root, 'docs'))
-    ? fs
-        .readdirSync(path.join(root, 'docs'), { withFileTypes: true })
-        .filter((entry) => entry.isFile())
-        .map((entry) => path.join(root, 'docs', entry.name))
-    : []),
-  ...fs
-    .readdirSync(path.join(skillsDir, 'runtype/references'))
-    .map((name) => path.join(skillsDir, 'runtype/references', name)),
+  ...filesInDir(path.join(root, 'docs')),
+  ...filesInDir(path.join(skillsDir, 'runtype/references')),
 ]) {
   if (exists(file)) checkForbiddenContent(file, read(file))
 }

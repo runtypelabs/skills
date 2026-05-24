@@ -96,5 +96,6 @@ be an agent.
 - Use `get_secret_intake_manifest`, `submit_secret_intake`, and `check_secrets` rather
   than asking the model to handle credential values.
 
-See `../runtype/references/mcp-tools.md` and `../runtype/references/primitives.md` for
-durable fallback notes.
+If the umbrella `runtype` skill is installed alongside this focused skill, its durable
+references provide deeper fallback notes. This skill must still work when installed by
+itself; prefer live MCP docs over local sibling files.

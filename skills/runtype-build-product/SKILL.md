@@ -89,6 +89,6 @@ finding, and ask whether to use UCP or the traditional commerce path before proc
 - Treat `update_agent` as wholesale replacement unless live docs say otherwise.
 - Surface-level evals catch orchestration and formatting issues that per-agent evals miss.
 
-See `../runtype/references/primitives.md`, `../runtype/references/surfaces.md`,
-`../runtype/references/flow-steps.md`, and `../runtype/references/recipes.md` when MCP is
-not available.
+If the umbrella `runtype` skill is installed alongside this focused skill, its durable
+references provide deeper fallback notes. This skill must still work when installed by
+itself; prefer live MCP docs over local sibling files.

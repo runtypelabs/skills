@@ -72,4 +72,6 @@ substitutes the value into the resolved product object.
 - Partial product schemas with a note that validation still needs work.
 - Using templates for one-off private account updates. Use `runtype-admin` instead.
 
-See `../runtype/references/fpo-templates.md` for fallback details.
+If the umbrella `runtype` skill is installed alongside this focused skill, its durable
+references provide deeper FPO template details. This skill must still work when
+installed by itself; prefer live MCP docs over local sibling files.
