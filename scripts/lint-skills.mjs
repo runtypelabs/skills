@@ -160,7 +160,7 @@ function extractArrayStrings(text, constName) {
 }
 
 function extractObjectLiteralBody(text, constName) {
-  const match = new RegExp(`const\\s+${constName}\\b[\\s\\S]*?=\\s*\\{`, 'm').exec(text)
+  const match = new RegExp(`(?:export\\s+)?const\\s+${constName}\\b[\\s\\S]*?=\\s*\\{`, 'm').exec(text)
   if (!match) return ''
 
   const start = match.index + match[0].lastIndexOf('{')
@@ -237,6 +237,12 @@ function extractMapKeys(text, constName) {
   )
 }
 
+function failIfEmptyParse(values, file, symbol) {
+  if (values.length === 0) {
+    failures.push(`${file}: could not parse ${symbol}; core drift check would be incomplete`)
+  }
+}
+
 function checkCoreDrift(files) {
   if (!exists(coreDir)) {
     warnings.push('Skipping core drift checks because ../core is not present')
@@ -252,9 +258,8 @@ function checkCoreDrift(files) {
     'packages/shared/src/product-generation/surface-type-metadata.ts'
   )
   if (exists(surfaceSource) && exists(surfacesDoc)) {
-    const surfaceNames = [
-      ...read(surfaceSource).matchAll(/^\s{2}([a-zA-Z0-9_]+): \{/gm),
-    ].map((match) => match[1])
+    const surfaceNames = extractMapKeys(read(surfaceSource), 'SURFACE_TYPE_METADATA')
+    failIfEmptyParse(surfaceNames, surfaceSource, 'SURFACE_TYPE_METADATA')
     const surfacesText = read(surfacesDoc)
     for (const name of surfaceNames) {
       if (!surfacesText.includes(`### \`${name}\``)) {
@@ -285,6 +290,7 @@ function checkCoreDrift(files) {
   const stepSource = path.join(coreDir, 'packages/shared/src/flow-step-types.ts')
   if (exists(stepSource) && exists(flowStepsDoc)) {
     const stepNames = extractArrayStrings(read(stepSource), 'CONTEXT_STEP_TYPES')
+    failIfEmptyParse(stepNames, stepSource, 'CONTEXT_STEP_TYPES')
     const flowStepsText = read(flowStepsDoc)
     for (const name of stepNames) {
       if (!flowStepsText.includes(`### \`${name}\``)) {
@@ -299,6 +305,7 @@ function checkCoreDrift(files) {
   )
   if (exists(docSource)) {
     const topics = extractMapKeys(read(docSource), 'DOCUMENTATION_TOPIC_MAP')
+    failIfEmptyParse(topics, docSource, 'DOCUMENTATION_TOPIC_MAP')
     for (const topic of topics) {
       if (!text.includes(topic)) {
         failures.push(`skills/: missing MCP documentation topic mention: ${topic}`)
@@ -312,11 +319,12 @@ function checkCoreDrift(files) {
   )
   if (exists(catalogSource)) {
     const promptBlock = read(catalogSource).match(
-      /export const MCP_PROMPT_DEFINITIONS:[\s\S]*?= \[([\s\S]*?)\n\]/
+      /export\s+const\s+MCP_PROMPT_DEFINITIONS\b[^=]*=\s*\[([\s\S]*?)\n\]/
     )
     const prompts = promptBlock
       ? [...promptBlock[1].matchAll(/^\s{4}name: '([^']+)'/gm)].map((match) => match[1])
       : []
+    failIfEmptyParse(prompts, catalogSource, 'MCP_PROMPT_DEFINITIONS')
     for (const prompt of prompts) {
       if (!text.includes(prompt)) {
         failures.push(`skills/: missing MCP prompt mention: ${prompt}`)
@@ -326,6 +334,7 @@ function checkCoreDrift(files) {
     const resources = [...read(catalogSource).matchAll(/uri: '(runtype:\/\/[^']+)'/g)].map(
       (match) => match[1]
     )
+    failIfEmptyParse(resources, catalogSource, 'MCP_RESOURCE_DEFINITIONS')
     const missingResources = resources.filter((resource) => !text.includes(resource))
     if (missingResources.length) {
       warnings.push(`MCP resource URIs not mentioned explicitly: ${missingResources.join(', ')}`)
