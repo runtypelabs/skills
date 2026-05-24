@@ -141,6 +141,15 @@ Telegram bot for messaging.
 - `messagesMutable: true`, `threadModel: flat`
 - **Execution hint**: clear and concise, no unnecessary verbosity, no reasoning traces
 
+### `messaging`
+
+Generic messaging surface for multi-channel delivery.
+
+- Use cases: unified support, channel-agnostic bots, internal routing across messaging providers
+- `deliveryModel: real_time`, `mediaSupport: images`, `markdownDialect: none`
+- Use when live docs expose a generic messaging integration for the target workflow. Prefer dedicated surfaces (`sms`, `whatsapp`, `telegram`, etc.) when channel-specific constraints, formatting, identity, or setup matter.
+- **Execution hint**: clear, concise, plain-text-safe responses with no reasoning traces
+
 ### `a2a`
 
 Agent-to-agent communication protocol.
@@ -194,6 +203,7 @@ You don't manually add these. The agent adapts.
 > "I want to run something every morning at 9" → `schedule`
 > "I need an email auto-responder" → `email`
 > "I have one bot that should work over SMS, WhatsApp, and Telegram" → three surfaces (one per channel) with channel-specific tuning. The channels' constraints diverge enough that per-surface configuration almost always beats a single shared surface.
+> "I need a generic multi-channel messaging gateway" → `messaging`
 > "I want to federate an external agent into my product" → `a2a` surface, register the external agent as a capability
 
 ## Trait-driven prompt construction

@@ -1,12 +1,8 @@
 # Runtype MCP Tool Catalog
 
-The Runtype MCP server at `https://api.runtype.com/v1/mcp/protocol` exposes ~100+ tools. This file groups them by purpose so you can find the right one fast.
+The Runtype MCP server at `https://api.runtype.com/v1/mcp/protocol` exposes the platform's agent-facing tools. This file groups them by purpose so you can find the right one fast.
 
-Two server variants exist:
-- **Prod**: `https://api.runtype.com/v1/mcp/protocol`
-- **Staging**: `https://api.runtype-staging.com/v1/mcp/protocol` (early access to new tools like agent versioning; otherwise identical surface)
-
-Always prefer prod unless the user explicitly opts into staging.
+For Code Mode MCP, use the `search` and `execute` tools to inspect the generated API spec and run shaped JavaScript against the Runtype API. Call `get_build_instructions` before code-mode writes for products or flows, just as you would in standard MCP.
 
 ## Discovery and identity
 
@@ -78,10 +74,10 @@ Schema feedback here is far more useful than waiting for create errors.
 | `list_agent_executions` | Per-agent execution history |
 | `execute_agent` | Send a message to an agent and capture response |
 | `export_agent_runtime` | Self-contained definition for SDK execution |
-| `list_agent_versions` (staging) | Agent version list |
-| `get_agent_version` (staging) | Specific version |
-| `get_published_agent_version` (staging) | Live version |
-| `publish_agent_version` (staging) | Promote a version |
+| `list_agent_versions` | Agent version list |
+| `get_agent_version` | Specific version |
+| `get_published_agent_version` | Live version |
+| `publish_agent_version` | Promote a version |
 
 ## Products, surfaces, capabilities
 
@@ -221,7 +217,11 @@ Schema feedback here is far more useful than waiting for create errors.
 |---|---|
 | `get_build_instructions` | Detailed instructions for building on Runtype |
 | `get_platform_documentation` | Schemas, type definitions, docs |
-| `generate_proposal` | Scope-of-work proposal for a client project |
+| `generate_proposal` / `generate-proposal` | Scope-of-work proposal for a client project |
+
+Useful documentation topics include `platform-catalog`, `surface-types`, `flow-step-types`, `models`, `product-schema`, `types-fpo`, `types-flow-steps`, `types-entities`, `orthogonal-tools`, `builtin-tools`, `external-tools`, `dashboard-links`, `mock-ecommerce`, `persona-embed`, `persona-fullscreen-assistant`, and `sdk-reference`.
+
+Useful MCP resources include `runtype://catalog/platform`, `runtype://catalog/surface-types`, `runtype://catalog/flow-step-types`, `runtype://catalog/models`, `runtype://schema/fpo`, `runtype://types/fpo`, `runtype://types/fpo-template`, `runtype://types/flow-steps`, `runtype://types/entities`, `runtype://types/surface-configs`, `runtype://catalog/orthogonal-tools`, `runtype://catalog/builtin-tools`, `runtype://guide/external-tools`, `runtype://guide/subagent-delegation`, `runtype://catalog/provider-native-search`, `runtype://catalog/dashboard-links`, `runtype://catalog/mock-ecommerce`, `runtype://catalog/ucp-commerce`, `runtype://catalog/persona-embed`, `runtype://guide/persona-fullscreen-assistant`, and `runtype://types/sdk-reference`.
 
 ## Quick selection guide
 

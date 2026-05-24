@@ -21,7 +21,7 @@ These are sketches, not copy-paste configs — the exact JSON shapes are best di
    - `create_agent` with:
      - `systemPrompt`: support persona + "Responding in Slack. Be concise (under 4000 chars). Use mrkdwn (`*bold*`, `_italic_`). Strip reasoning traces."
      - `tools`: `[lookup_customer, create_linear_issue]`
-     - `maxTurns`: 5 (enough for lookup → answer; bump if it commonly needs more)
+     - `maxToolCalls`: 5 (enough for lookup → optional ticket creation → answer; bump if it commonly needs more)
 4. **Product**:
    - `create_product` to group it all.
    - `add_product_capability` to attach the agent to the product.
@@ -103,11 +103,14 @@ These are sketches, not copy-paste configs — the exact JSON shapes are best di
 
 1. **Tools**:
    - `create_tool` for each of the three. Each is a custom JS tool that calls an internal API or vector store. Use `validate_code` before each create.
-2. **Agent**: optional — depends on whether the MCP surface should also offer a chat-style endpoint, or just raw tools. If raw tools only, you can create a minimal agent that just exposes the tools.
-3. **Surface**: `create_surface` of type `mcp`:
-   - `behavior` lists the tools to expose.
-4. **Surface key**: `create_surface_key` — the user's Cursor MCP config will need this key.
-5. **Distribute**: Tell the user to add the MCP server to Cursor with the URL and key.
+2. **Agent or flow capability**: create a capability that uses those tools. For an MCP surface, exposed tools are generated from bound capabilities; the `mcp` surface behavior config only covers server/auth/logging metadata.
+3. **Product wiring**:
+   - `create_product`.
+   - `add_product_capability` for the agent or flow.
+4. **Surface**: `create_surface` of type `mcp`.
+5. **Surface item**: `add_surface_item` to bind the capability to the MCP surface. Each bound capability becomes an MCP tool.
+6. **Surface key**: `create_surface_key` — the user's Cursor MCP config will need this key.
+7. **Distribute**: Tell the user to add the MCP server to Cursor with the URL and key.
 
 **Gotchas:**
 - Tool descriptions are the LLM's interface — write them like docstrings, not like commit messages. The LLM will choose based on the description.
@@ -124,7 +127,7 @@ These are sketches, not copy-paste configs — the exact JSON shapes are best di
 1. **Agent**: `create_agent` with the support persona and any tools it needs (FAQ search, ticket creation, etc.).
 2. **Product** + capability binding.
 3. **Surface**: `create_surface` of type `chat`. Configure the launcher, theme, and visible features (`showToolCalls`, `showReasoning`).
-4. **Client token**: `create_client_token` — short-lived, scoped to this surface. The widget uses this.
+4. **Client token**: `create_client_token` — public, scoped, revocable, and usable by the browser-side widget.
 5. **Embed code**: `generate_persona_embed_code` — returns a ready-to-paste HTML snippet. **Prefer this over hand-writing the embed.**
 6. **Theming**: Before generating a custom theme, call `get_persona_theme_reference` to load the design-token docs and example themes. See `persona-widget.md` for the contrast rules and theming gotchas — header tokens are easy to get wrong.
 

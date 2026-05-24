@@ -27,7 +27,7 @@ Shape:
 - `model` — model config reference (use `list_model_configs`)
 - `systemPrompt` — the main thing that defines the agent's behavior
 - `tools` — array of tool ids
-- `maxToolCalls` — how many tool calls the agent can make in one turn (default high — 30-50 is typical; this is the right knob, not "agent loop")
+- `maxToolCalls` — how many tool calls the agent can make in one turn (default is 10; raise it deliberately for tool-heavy tasks)
 - `agentLoop` config (optional, advanced) — how many full turns of reflection the agent can do
 - `responseFormat`, `humanInLoopApprovals`, etc.
 
@@ -48,10 +48,10 @@ When an agent isn't doing what you want, the first reach is to improve the syste
 
 Two different knobs that get confused.
 
-- **`maxToolCalls`**: how many tool calls the agent can make in one execution. Default high. Modern LLMs are fine doing 20+ tool calls in a single turn to accomplish a task. This is what most products need.
+- **`maxToolCalls`**: how many tool calls the agent can make in one execution. Default is 10. Raise it deliberately when the task requires several lookups, writes, or sub-agent calls in one turn.
 - **`agentLoop`**: how many *full reflection turns* the agent gets — re-running with the previous results as context, getting another shot. Advanced. Risks: looping with the same goal does the same task each iteration unless you explicitly tell it to reflect or vary approach. The most expensive, easiest-to-mess-up architecture.
 
-Default to high `maxToolCalls`. Reach for `agentLoop` only when you've verified the agent needs reflection and a clearer prompt or a different approach won't do it.
+Tune `maxToolCalls` before reaching for `agentLoop`. Use `agentLoop` only when you've verified the agent needs reflection and a clearer prompt or a different approach won't do it.
 
 Often, **sub-agents** (agents that the orchestrator calls as tools) are better than agent loops. They get clean context, can use different models tuned for sub-tasks, and avoid the same-task-repeated trap.
 
@@ -85,7 +85,7 @@ Flows are versioned. Updates create new versions; only the published one is invo
 
 ### When flows beat agents
 
-Flows can run **30x faster** than the equivalent agent (300ms vs 10s) when the steps are deterministic. The win comes from skipping the LLM tool-selection round trips.
+Flows can be much faster and cheaper than the equivalent agent when the steps are deterministic. The win comes from skipping LLM tool-selection round trips.
 
 Good candidates to be a flow (not an agent):
 - Sending an email: format → render → send
@@ -295,7 +295,7 @@ The execution engine routes intelligently across native + federated capabilities
 
 ## Persona client tokens
 
-For the embedded chat widget, `chat` surfaces get short-lived `clientToken`s for browser-side use.
+For the embedded chat widget, `chat` surfaces use browser-safe `clientToken`s created with `create_client_token`. These tokens are public, scoped to specific agents or flows, revocable, and can be constrained with origin and rate-limit settings.
 
 Lifecycle: `create_client_token`, `get_client_token`, `list_client_tokens`, `regenerate_client_token`, `delete_client_token`.
 
