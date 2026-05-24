@@ -157,10 +157,80 @@ function extractArrayStrings(text, constName) {
   return [...block[1].matchAll(/'([^']+)'/g)].map((match) => match[1])
 }
 
+function extractObjectLiteralBody(text, constName) {
+  const match = new RegExp(`const\\s+${constName}\\b[\\s\\S]*?=\\s*\\{`, 'm').exec(text)
+  if (!match) return ''
+
+  const start = match.index + match[0].lastIndexOf('{')
+  let depth = 0
+  let quote = null
+  let escaped = false
+  let lineComment = false
+  let blockComment = false
+
+  for (let i = start; i < text.length; i += 1) {
+    const char = text[i]
+    const next = text[i + 1]
+
+    if (lineComment) {
+      if (char === '\n') lineComment = false
+      continue
+    }
+
+    if (blockComment) {
+      if (char === '*' && next === '/') {
+        blockComment = false
+        i += 1
+      }
+      continue
+    }
+
+    if (quote) {
+      if (escaped) {
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === quote) {
+        quote = null
+      }
+      continue
+    }
+
+    if (char === '/' && next === '/') {
+      lineComment = true
+      i += 1
+      continue
+    }
+
+    if (char === '/' && next === '*') {
+      blockComment = true
+      i += 1
+      continue
+    }
+
+    if (char === "'" || char === '"' || char === '`') {
+      quote = char
+      continue
+    }
+
+    if (char === '{') {
+      depth += 1
+      continue
+    }
+
+    if (char === '}') {
+      depth -= 1
+      if (depth === 0) return text.slice(start + 1, i)
+    }
+  }
+
+  return ''
+}
+
 function extractMapKeys(text, constName) {
-  const block = text.match(new RegExp(`const ${constName}:[\\s\\S]*?= \\{([\\s\\S]*?)\\n\\}`, 'm'))
-  if (!block) return []
-  return [...block[1].matchAll(/^\s*(?:'([^']+)'|([A-Za-z][A-Za-z0-9_-]*))\s*:/gm)].map(
+  const body = extractObjectLiteralBody(text, constName)
+  if (!body) return []
+  return [...body.matchAll(/^ {2}(?:'([^']+)'|([A-Za-z][A-Za-z0-9_-]*))\s*:/gm)].map(
     (match) => match[1] || match[2]
   )
 }
@@ -261,18 +331,17 @@ function checkCoreDrift(files) {
   }
 }
 
-function checkSemanticAssertions() {
+function checkSemanticAssertions(files) {
   const docs = {
     persona: path.join(skillsDir, 'runtype/references/persona-widget.md'),
     primitives: path.join(skillsDir, 'runtype/references/primitives.md'),
     recipes: path.join(skillsDir, 'runtype/references/recipes.md'),
     workingModes: path.join(skillsDir, 'runtype/references/working-modes.md'),
   }
+  const text = allSkillText(files)
 
-  function failIfMatches(file, pattern, message) {
-    if (exists(file) && pattern.test(read(file))) {
-      failures.push(`${file}: ${message}`)
-    }
+  function failIfAnySkillMatches(pattern, message) {
+    if (pattern.test(text)) failures.push(`skills/: ${message}`)
   }
 
   function requireText(file, pattern, message) {
@@ -281,10 +350,9 @@ function checkSemanticAssertions() {
     }
   }
 
-  failIfMatches(
-    docs.persona,
+  failIfAnySkillMatches(
     /YOUR_SURFACE_KEY|Surface key from Runtype dashboard/i,
-    'Persona embed docs must use client-token terminology, not surface-key terminology'
+    'Persona guidance must use client-token terminology, not surface-key terminology'
   )
   requireText(
     docs.persona,
@@ -292,10 +360,9 @@ function checkSemanticAssertions() {
     'Persona embed docs must explicitly say client tokens are created with create_client_token and are not surface keys'
   )
 
-  failIfMatches(
-    docs.primitives,
+  failIfAnySkillMatches(
     /default high|30-50 is typical|Default to high `maxToolCalls`|30x faster|300ms vs 10s|short-lived `clientToken`/i,
-    'primitive guidance contains an outdated or unsupported runtime assertion'
+    'guidance contains an outdated or unsupported runtime assertion'
   )
   requireText(
     docs.primitives,
@@ -303,10 +370,9 @@ function checkSemanticAssertions() {
     'agent primitive docs must state the current maxToolCalls default'
   )
 
-  failIfMatches(
-    docs.recipes,
+  failIfAnySkillMatches(
     /`maxTurns`: 5|client token[^.\n]*short-lived|short-lived[^.\n]*(?:clientToken|client token)|`behavior` lists the tools to expose/i,
-    'recipe guidance contains an outdated MCP, agent-loop, or client-token assertion'
+    'guidance contains an outdated MCP, agent-loop, or client-token assertion'
   )
   requireText(
     docs.recipes,
@@ -314,10 +380,9 @@ function checkSemanticAssertions() {
     'MCP surface recipe must describe capability-to-surface-item wiring'
   )
 
-  failIfMatches(
-    docs.workingModes,
+  failIfAnySkillMatches(
     /100% API coverage|Zero telemetry|No phone home/i,
-    'working-mode docs contain absolute API coverage or telemetry claims that must stay conditional'
+    'guidance contains absolute API coverage or telemetry claims that must stay conditional'
   )
   requireText(
     docs.workingModes,
@@ -399,7 +464,7 @@ for (const file of [
 }
 
 checkCoreDrift(files)
-checkSemanticAssertions()
+checkSemanticAssertions(files)
 checkActivationSmoke(files)
 
 for (const warning of warnings) {
