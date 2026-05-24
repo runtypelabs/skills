@@ -104,6 +104,7 @@ function checkOpenAiYaml(skillName, skillDir) {
     return
   }
   const text = read(file)
+  checkForbiddenContent(file, text)
   for (const key of ['display_name:', 'short_description:', 'default_prompt:']) {
     if (!text.includes(key)) failures.push(`${file}: missing interface.${key.replace(':', '')}`)
   }
@@ -152,18 +153,19 @@ function allSkillText(files) {
 }
 
 function extractArrayStrings(text, constName) {
-  const block = text.match(
-    new RegExp(`(?:export\\s+)?const\\s+${constName}\\b[^=]*=\\s*\\[([\\s\\S]*?)\\]`, 'm')
-  )
-  if (!block) return []
-  return [...block[1].matchAll(/'([^']+)'/g)].map((match) => match[1])
+  const body = extractArrayLiteralBody(text, constName)
+  if (!body) return []
+  return [...body.matchAll(/'([^']+)'/g)].map((match) => match[1])
 }
 
-function extractObjectLiteralBody(text, constName) {
-  const match = new RegExp(`(?:export\\s+)?const\\s+${constName}\\b[\\s\\S]*?=\\s*\\{`, 'm').exec(text)
+function extractBalancedLiteralBody(text, constName, openChar, closeChar) {
+  const match = new RegExp(
+    `(?:export\\s+)?const\\s+${constName}\\b[\\s\\S]*?=\\s*${escapeRegExp(openChar)}`,
+    'm'
+  ).exec(text)
   if (!match) return ''
 
-  const start = match.index + match[0].lastIndexOf('{')
+  const start = match.index + match[0].lastIndexOf(openChar)
   let depth = 0
   let quote = null
   let escaped = false
@@ -215,18 +217,98 @@ function extractObjectLiteralBody(text, constName) {
       continue
     }
 
-    if (char === '{') {
+    if (char === openChar) {
       depth += 1
       continue
     }
 
-    if (char === '}') {
+    if (char === closeChar) {
       depth -= 1
       if (depth === 0) return text.slice(start + 1, i)
     }
   }
 
   return ''
+}
+
+function extractObjectLiteralBody(text, constName) {
+  return extractBalancedLiteralBody(text, constName, '{', '}')
+}
+
+function extractArrayLiteralBody(text, constName) {
+  return extractBalancedLiteralBody(text, constName, '[', ']')
+}
+
+function extractTopLevelObjectBodies(text) {
+  const bodies = []
+  let depth = 0
+  let start = -1
+  let quote = null
+  let escaped = false
+  let lineComment = false
+  let blockComment = false
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i]
+    const next = text[i + 1]
+
+    if (lineComment) {
+      if (char === '\n') lineComment = false
+      continue
+    }
+
+    if (blockComment) {
+      if (char === '*' && next === '/') {
+        blockComment = false
+        i += 1
+      }
+      continue
+    }
+
+    if (quote) {
+      if (escaped) {
+        escaped = false
+      } else if (char === '\\') {
+        escaped = true
+      } else if (char === quote) {
+        quote = null
+      }
+      continue
+    }
+
+    if (char === '/' && next === '/') {
+      lineComment = true
+      i += 1
+      continue
+    }
+
+    if (char === '/' && next === '*') {
+      blockComment = true
+      i += 1
+      continue
+    }
+
+    if (char === "'" || char === '"' || char === '`') {
+      quote = char
+      continue
+    }
+
+    if (char === '{') {
+      if (depth === 0) start = i
+      depth += 1
+      continue
+    }
+
+    if (char === '}') {
+      depth -= 1
+      if (depth === 0 && start !== -1) {
+        bodies.push(text.slice(start + 1, i))
+        start = -1
+      }
+    }
+  }
+
+  return bodies
 }
 
 function extractMapKeys(text, constName) {
@@ -318,12 +400,10 @@ function checkCoreDrift(files) {
     'packages/shared/src/product-generation/mcp-catalog-data.ts'
   )
   if (exists(catalogSource)) {
-    const promptBlock = read(catalogSource).match(
-      /export\s+const\s+MCP_PROMPT_DEFINITIONS\b[^=]*=\s*\[([\s\S]*?)\n\]/
-    )
-    const prompts = promptBlock
-      ? [...promptBlock[1].matchAll(/^\s{4}name: '([^']+)'/gm)].map((match) => match[1])
-      : []
+    const promptBody = extractArrayLiteralBody(read(catalogSource), 'MCP_PROMPT_DEFINITIONS')
+    const prompts = extractTopLevelObjectBodies(promptBody)
+      .map((body) => body.match(/\bname:\s*'([^']+)'/)?.[1])
+      .filter(Boolean)
     failIfEmptyParse(prompts, catalogSource, 'MCP_PROMPT_DEFINITIONS')
     for (const prompt of prompts) {
       if (!text.includes(prompt)) {
