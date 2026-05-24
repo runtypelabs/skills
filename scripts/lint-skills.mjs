@@ -27,15 +27,31 @@ function filesInDir(dir) {
     .map((entry) => path.join(dir, entry.name))
 }
 
+function filesInTree(dir, includeFile) {
+  if (!exists(dir)) return []
+
+  const files = []
+  const stack = [dir]
+  while (stack.length) {
+    const current = stack.pop()
+    for (const entry of fs.readdirSync(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name)
+      if (entry.isDirectory()) stack.push(full)
+      if (entry.isFile() && includeFile(entry.name)) files.push(full)
+    }
+  }
+  return files.sort((a, b) => a.localeCompare(b))
+}
+
 function parseFrontmatter(text, file) {
-  const match = text.match(/^---\n([\s\S]*?)\n---\n?/)
+  const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
   if (!match) {
     failures.push(`${file}: missing YAML frontmatter`)
     return {}
   }
 
   const frontmatter = match[1]
-  const lines = frontmatter.split('\n')
+  const lines = frontmatter.split(/\r?\n/)
   const data = {}
 
   for (let i = 0; i < lines.length; i += 1) {
@@ -104,7 +120,6 @@ function checkOpenAiYaml(skillName, skillDir) {
     return
   }
   const text = read(file)
-  checkForbiddenContent(file, text)
   for (const key of ['display_name:', 'short_description:', 'default_prompt:']) {
     if (!text.includes(key)) failures.push(`${file}: missing interface.${key.replace(':', '')}`)
   }
@@ -539,9 +554,12 @@ for (const skill of files) {
     failures.push(`${skill.file}: SKILL.md exceeds 500 lines`)
   }
 
-  checkForbiddenContent(skill.file, text)
   checkLinkedReferences(skill.dir, text, skill.file)
   checkOpenAiYaml(skill.name, skill.dir)
+
+  for (const file of filesInTree(skill.dir, (name) => /\.(md|ya?ml|json|mjs|js|ts|sh)$/.test(name))) {
+    checkForbiddenContent(file, read(file))
+  }
 }
 
 for (const file of [
