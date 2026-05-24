@@ -43,10 +43,10 @@ function filesInTree(dir, includeFile) {
   return files.sort((a, b) => a.localeCompare(b))
 }
 
-function parseFrontmatter(text, file) {
+function parseFrontmatter(text, file, options = {}) {
   const match = text.match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?/)
   if (!match) {
-    failures.push(`${file}: missing YAML frontmatter`)
+    if (options.report !== false) failures.push(`${file}: missing YAML frontmatter`)
     return {}
   }
 
@@ -521,7 +521,7 @@ function checkActivationSmoke(files) {
   }
 
   const descriptions = files
-    .map((skill) => parseFrontmatter(read(skill.file), skill.file).description ?? '')
+    .map((skill) => parseFrontmatter(read(skill.file), skill.file, { report: false }).description ?? '')
     .join('\n')
     .toLowerCase()
   if (descriptions.includes('vercel ai sdk')) {
