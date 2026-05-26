@@ -9,8 +9,6 @@
   "skills": "skills/",
   "interface": {
     "composerIcon": "./assets/icon.svg",
-    "branding": {
-      "color": "#4C00FF"
-    }
+    "brandColor": "#4C00FF"
   }
 }
