@@ -14,4 +14,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: node scripts/lint-skills.mjs
+      - name: Lint skill content
+        run: node scripts/lint-skills.mjs
+      - name: Smoke test standalone skill installs
+        run: node scripts/smoke-install-skills.mjs

@@ -35,9 +35,10 @@ Run the repository skill lint before publishing:
 
 ```bash
 node scripts/lint-skills.mjs
+node scripts/smoke-install-skills.mjs
 ```
 
-The lint checks frontmatter, description length, linked references, forbidden internal URLs, common secret leaks, semantic guardrails for drift-prone claims, and extra drift against the neighboring `../core` monorepo when it is present.
+The lint checks frontmatter, description length, linked references, forbidden internal URLs, common secret leaks, semantic guardrails for drift-prone claims, and extra drift against the neighboring `../core` monorepo when it is present. The smoke test copies each skill into an isolated install directory and confirms standalone metadata and local references still resolve.
 
 For the recommended private-source/public-publish workflow, see [Keeping Runtype Skills in Sync](docs/keeping-skills-in-sync.md).
 
