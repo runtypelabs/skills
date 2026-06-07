@@ -28,6 +28,9 @@ When MCP is available:
   matter.
 
 Do not hand-write embed code unless the MCP tools are unavailable.
+If the task needs details not listed here, fetch `persona-embed`,
+`persona-fullscreen-assistant`, or `types-surface-configs` rather than adding
+more embed prose to this skill.
 
 ## Critical Constants
 

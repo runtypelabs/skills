@@ -4,7 +4,21 @@ End-to-end examples for common product shapes. Each one shows the MCP tool calls
 
 These are sketches, not copy-paste configs — the exact JSON shapes are best discovered via `get_build_instructions` and `get_platform_documentation` once you're connected to the MCP server. Use the recipe as a roadmap.
 
----
+## Contents
+
+- [Recipe 1: Slack support agent](#recipe-1-slack-support-agent)
+- [Recipe 2: Webhook-triggered email processor](#recipe-2-webhook-triggered-email-processor)
+- [Recipe 3: Scheduled news digest](#recipe-3-scheduled-news-digest)
+- [Recipe 4: Custom MCP server with tools for Cursor](#recipe-4-custom-mcp-server-with-tools-for-cursor)
+- [Recipe 5: Embeddable chat widget for a website](#recipe-5-embeddable-chat-widget-for-a-website)
+- [Recipe 6: Eval harness for an agent change](#recipe-6-eval-harness-for-an-agent-change)
+- [Recipe 7: Multi-agent system](#recipe-7-multi-agent-system)
+- [When to package as an FPO Template](#when-to-package-as-an-fpo-template)
+- [Recipe 8: Multi-capability product with auto-orchestrator](#recipe-8-multi-capability-product-with-auto-orchestrator)
+- [Recipe 9: Federate an external CrewAI agent into a Runtype product](#recipe-9-federate-an-external-crewai-agent-into-a-runtype-product)
+- [Recipe 10: SDK-defined product with local tools (browser DOM access)](#recipe-10-sdk-defined-product-with-local-tools-browser-dom-access)
+- [Recipe 11: Privacy-sensitive product with hidden parameters + server-side local tools](#recipe-11-privacy-sensitive-product-with-hidden-parameters--server-side-local-tools)
+- [When to use which deployment mode](#when-to-use-which-deployment-mode)
 
 ## Recipe 1: Slack support agent
 

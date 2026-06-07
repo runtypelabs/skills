@@ -2,7 +2,19 @@
 
 Every surface has a **type** and carries **traits** that the platform uses to enforce channel-appropriate behavior. When designing a product, pick the surface type first — its traits constrain everything downstream (max response length, streaming, markdown dialect, reasoning visibility).
 
+Prefer live `get_platform_documentation(topic="surface-types")` and `runtype://types/surface-configs` when available. This file is fallback orientation.
+
 Many surfaces carry an `executionHint` that should be appended to the agent's system prompt to enforce formatting. The platform may do this automatically; check before duplicating it manually.
+
+## Contents
+
+- [Trait dimensions](#trait-dimensions)
+- [Surface type catalog](#surface-type-catalog)
+- [Auto-generated REST and MCP APIs](#auto-generated-rest-and-mcp-apis)
+- [The orchestrator (multi-capability conversational surfaces)](#the-orchestrator-multi-capability-conversational-surfaces)
+- [Surface-specific auto-registered tools](#surface-specific-auto-registered-tools)
+- [Picking a surface](#picking-a-surface)
+- [Trait-driven prompt construction](#trait-driven-prompt-construction)
 
 ## Trait dimensions
 
@@ -19,7 +31,7 @@ Many surfaces carry an `executionHint` that should be appended to the agent's sy
 | `markdownDialect`     | `none` / `markdown` / `mdx` / `mrkdwn` / `html`                                              |
 | `threadModel`         | `flat` / `threaded` / `reply_chain`                                                          |
 | `senderIdentity`      | `anonymous` / `authenticated` / `verified`                                                   |
-| `maxResponseLength`   | Hard cap on output length (chars)                                                            |
+| `maxResponseLength`   | Response length budget/cap (chars)                                                           |
 | `executionHint`       | A formatting instruction appended to the agent's system prompt                               |
 
 ## Surface type catalog
@@ -162,6 +174,14 @@ Agent-to-agent communication protocol.
 - `consumerType: agent`, `deliveryModel: sync`
 - Use when one agent product needs to be invokable as a tool by another agent product.
 
+### `hosted-page`
+
+Hosted publisher page for exposing one or more capabilities as a branded mini-app.
+
+- Use cases: public mini-apps, customer-facing tools, authenticated internal pages
+- Presentation config lives on surface items; product-level page behavior controls route, auth requirement, nav style, branding, and social metadata
+- Read `runtype://types/surface-configs` before authoring because this surface has structured `HostedPageBehavior` and `HostedPagePresentation` fields
+
 ## Auto-generated REST and MCP APIs
 
 When you bind capabilities to a `mcp` or `api` surface, the platform **auto-generates** endpoints (for REST) or tools (for MCP) from each capability. You don't write the endpoints yourself.
@@ -211,6 +231,7 @@ You don't manually add these. The agent adapts.
 > "I have one bot that should work over SMS, WhatsApp, and Telegram" → three surfaces (one per channel) with channel-specific tuning. The channels' constraints diverge enough that per-surface configuration almost always beats a single shared surface.
 > "I need a generic multi-channel messaging gateway" → `messaging`
 > "I want to federate an external agent into my product" → `a2a` surface, register the external agent as a capability
+> "I want Runtype to host a branded mini-app for this product" → `hosted-page`
 
 ## Trait-driven prompt construction
 

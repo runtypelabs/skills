@@ -3,6 +3,19 @@
 FPO Templates are Runtype's **distribution format**. A template wraps a `FullProductObject` with import-time variables that get substituted on import, producing a ready-to-run product.
 
 Use templates when you want to ship a Runtype product to someone else's workspace — internal team distribution, customer-shippable starters, marketplace listings.
+Prefer live `runtype://types/fpo-template` and `runtype://types/fpo` when available.
+
+## Contents
+
+- [The TypeScript shape](#the-typescript-shape)
+- [How import works](#how-import-works)
+- [Validity](#validity)
+- [Secrets: the right pattern](#secrets-the-right-pattern)
+- [Template variables — when to use them](#template-variables--when-to-use-them)
+- [Authoring workflow](#authoring-workflow)
+- [Validation tools](#validation-tools)
+- [Anti-patterns](#anti-patterns)
+- [Why this format exists](#why-this-format-exists)
 
 ## The TypeScript shape
 
@@ -27,6 +40,11 @@ export interface FpoTemplateVariable {
   options?: { label: string; value: string | number | boolean }[]
 }
 ```
+
+The template wrapper version is separate from `productObject.version`. New product
+objects should normally use FPO `version: "2.0"`, whose inline agents put runtime
+fields under `agent.config`. Use `"1.0"` / `"1.1"` product objects only when editing
+legacy flat-agent templates.
 
 ## How import works
 

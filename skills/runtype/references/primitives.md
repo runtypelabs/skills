@@ -1,6 +1,23 @@
 # Primitives
 
 This file goes deeper on each Runtype primitive: its shape, its lifecycle, and which MCP tools touch it.
+Prefer live `platform-catalog`, `product-schema`, and type resources when available.
+
+## Contents
+
+- [Product](#product)
+- [Agent](#agent)
+- [Flow](#flow)
+- [Tool](#tool)
+- [Capability](#capability)
+- [Surface](#surface)
+- [Record](#record)
+- [Schedule](#schedule)
+- [Eval](#eval)
+- [Secrets](#secrets)
+- [Conversation](#conversation)
+- [External and federated agents (A2A, cloud-managed)](#external-and-federated-agents-a2a-cloud-managed)
+- [Persona client tokens](#persona-client-tokens)
 
 ## Product
 
@@ -66,11 +83,15 @@ Axes to consider:
 - **Latency** — bigger = slower.
 - **Cost** — bigger = more expensive.
 - **Compliance/governance** — data residency, region. Drives provider choice (Vertex/Gemini for GCP shops, etc.).
-- **Family-specific tools** — Twitter search via Grok, certain Google search tools via Gemini, image generation via Gemini's nano-banana, OpenAI / Anthropic family-specific research tools.
+- **Family-specific tools** — provider-native search, fetch, image, or research tools available only on certain model families.
 
-Default: try a model released in the last six months. Pick one with the right vibes, intelligent enough for the task, optimized for speed/cost. Avoid starting on the largest available model — usually overkill.
+Default: use the current model catalog and routed model IDs. Pick one intelligent
+enough for the task and optimized for speed/cost. Avoid starting on the largest
+available model unless the task genuinely needs it.
 
-Runtype has a curated catalog of a couple hundred models (`list_available_models`). You don't need provider accounts to get started; bring your own keys on Team+ plans.
+Use `list_available_models`, `list_model_configs`, and
+`get_platform_documentation(topic="models")` for current availability and key
+requirements.
 
 ## Flow
 
@@ -214,6 +235,8 @@ Each surface has:
 - A **behavior config** specific to the type
 - Optional **surface keys** for authentication (clients use these)
 - For Persona: **client tokens** issued via `create_client_token`
+- For hosted pages: product-level `HostedPageBehavior` and per-capability
+  `HostedPagePresentation` in `runtype://types/surface-configs`
 
 Lifecycle: `create_surface` → `add_surface_item` (wire a capability in) → `update_surface` / `delete_surface`. Slack-specific: `install_slack_integration` for OAuth.
 

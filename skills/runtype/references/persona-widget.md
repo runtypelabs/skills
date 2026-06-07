@@ -3,6 +3,22 @@
 Persona (`@runtypelabs/persona`) is the SDK behind the embeddable chat UI for any Runtype agent or flow surface of type `chat`.
 
 When asked to generate embed code, prefer calling `generate_persona_embed_code` on the MCP server — it returns a tested, current snippet. Only hand-write embed code when the MCP tool is unavailable. When hand-writing, follow this guide exactly.
+For current WebMCP and fullscreen layout details, prefer `persona-embed`,
+`persona-fullscreen-assistant`, and `types-surface-configs`.
+
+## Contents
+
+- [Critical common mistakes](#critical-common-mistakes)
+- [CDN base URL](#cdn-base-url)
+- [Client token](#client-token)
+- [Three integration options](#three-integration-options)
+- [Config reference](#config-reference)
+- [Programmatic access](#programmatic-access)
+- [WebMCP page tools](#webmcp-page-tools)
+- [Theme contrast rules (critical)](#theme-contrast-rules-critical)
+- [Tool calls and reasoning bubbles](#tool-calls-and-reasoning-bubbles)
+- [Fullscreen AI-assistant layouts](#fullscreen-ai-assistant-layouts)
+- [Generating artifacts that embed the widget](#generating-artifacts-that-embed-the-widget)
 
 ## Critical common mistakes
 
