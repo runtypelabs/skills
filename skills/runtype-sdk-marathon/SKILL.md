@@ -64,6 +64,9 @@ Common commands include `runtype agents list`, `runtype dispatch`, `runtype flow
 `runtype eval`, `runtype persona`, `runtype products init`, and
 `runtype validate-product`.
 
+For command flags not listed here, run `runtype --help` or
+`runtype marathon --help` instead of expanding this skill with CLI reference text.
+
 ## Marathon
 
 Marathon is the CLI harness for long-running research, code editing, and build tasks. It

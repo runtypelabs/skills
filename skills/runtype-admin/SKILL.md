@@ -92,6 +92,8 @@ be an agent.
 - Preserve fields unrelated to the request.
 - Validate before update when validators exist.
 - Respect pagination cursors on list endpoints.
+- When a payload shape, route, or dashboard URL is uncertain, use Code Mode
+  `search` or `get_platform_documentation(topic="platform-catalog")` before guessing.
 - Use `get_platform_documentation(topic="dashboard-links")` when giving the user links.
 - Use `get_secret_intake_manifest`, `submit_secret_intake`, and `check_secrets` rather
   than asking the model to handle credential values.

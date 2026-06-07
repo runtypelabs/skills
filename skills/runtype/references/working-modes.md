@@ -1,6 +1,16 @@
 # Working Modes & Deployment
 
 Runtype supports a range of ways to build and deploy. They all drive the same underlying config — there's no separate "API-first vs UI-first" code path. The choice is about workflow, team practices, and constraints. Read this when helping a user pick how to work.
+Prefer live `sdk-reference`, `platform-catalog`, and Code Mode `search` when available.
+
+## Contents
+
+- [The three authoring modes (equivalent)](#the-three-authoring-modes-equivalent)
+- [The SDK story (TypeScript & Python)](#the-sdk-story-typescript--python)
+- [What the SDK unlocks beyond authoring](#what-the-sdk-unlocks-beyond-authoring)
+- [On-prem deployment (enterprise)](#on-prem-deployment-enterprise)
+- [Picking a mode](#picking-a-mode)
+- [Anti-patterns](#anti-patterns)
 
 ## The three authoring modes (equivalent)
 

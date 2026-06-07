@@ -3,6 +3,19 @@
 Every step in a flow has a `type` and a config blob specific to that type. This is the catalog, grouped by category, with the config hints that matter.
 
 Inside a flow, step results become variables. Reference them with `{{stepName.field}}` in templates (`prompt`, `template`, `api-call`, `send-email`) or via the `input` object in `transform-data` JS code.
+Prefer live `flow-step-types` and `types-flow-steps` when available.
+
+## Contents
+
+- [AI steps](#ai-steps)
+- [Document steps](#document-steps)
+- [Integration steps](#integration-steps)
+- [Data steps](#data-steps)
+- [Vector steps](#vector-steps)
+- [Memory steps](#memory-steps)
+- [Communication steps](#communication-steps)
+- [Control flow steps](#control-flow-steps)
+- [Step composition notes](#step-composition-notes)
 
 ## AI steps
 
@@ -106,7 +119,7 @@ Config: `toolId`, `parameters`, `outputVariable`
 
 Execute JavaScript code in a sandboxed environment.
 
-Config: `script`, `outputVariable`, `sandboxProvider` (`cloudflare-worker` | `quickjs` | `daytona`)
+Config: `script`, `outputVariable`, `sandboxProvider` (`cloudflare-worker` default | `quickjs` | `runtype-sandbox` | `daytona`; legacy `cloudflare-sandbox` input remaps to `runtype-sandbox`), optional `language` (`javascript` | `typescript` | `python`, defaults to `javascript` for `runtype-sandbox`)
 
 Access flow variables via the `input` object. Return value becomes the step output. Use this for any data shaping that isn't worth a tool — schema conversion, filtering, aggregation, math.
 
@@ -128,7 +141,7 @@ Config: `recordType`, `sourceVariable` (**must point to a JSON object**), `outpu
 
 Update specific fields on an existing record.
 
-Config: `recordId`, `recordFilter` (`{ type, where }`), `updates`, `mergeStrategy` (`merge` | `replace`), `outputVariable`
+Config: `recordId`, `recordFilter` (`{ type, where }`), `updates`, `mergeStrategy` (`merge` | `replace` | `deep-merge`), `outputVariable`
 
 Finds the record by id, by `type+name`, or by chip filter (first match wins, ordered by `updatedAt` desc).
 
@@ -153,6 +166,28 @@ Store vector embeddings in a vector database.
 Config: `vectorsSource`, `destination`, `outputVariable`
 
 Typical RAG flow: `crawl` → `transform-data` (chunk) → `generate-embedding` → `store-vector`. At query time: `generate-embedding` → `vector-search` → `prompt` (with retrieved context in the user prompt).
+
+## Memory steps
+
+Long-term agent memory steps — the flow-level equivalent of the auto-injected agent memory tools. Each addresses a memory profile via a `profileTemplate` (supports variables, e.g. `{{_agent.id}}`, `{{_user.id}}`).
+
+### `save-memory`
+
+Ingest text from a variable into a Cloudflare Agent Memory profile.
+
+Config: `profileTemplate`, `contentVariable`, optional `sessionId`, optional `outputVariable`, optional `errorHandling`, optional `defaultValue`
+
+### `recall-memory`
+
+Recall a synthesized answer from a Cloudflare Agent Memory profile for a query.
+
+Config: `profileTemplate`, `queryTemplate`, `outputVariable`, optional `thinkingLevel` (`low` | `medium` | `high`), optional `responseLength` (`short` | `medium` | `long`), optional `errorHandling`, optional `defaultValue`
+
+### `memory-summary`
+
+Fetch a markdown summary of a Cloudflare Agent Memory profile.
+
+Config: `profileTemplate`, `outputVariable`, optional `sessionId`, optional `errorHandling`, optional `defaultValue`
 
 ## Communication steps
 
@@ -262,4 +297,4 @@ Don't use `transform-data` to:
 - Clean up JSON for an LLM — the LLM can read it as is
 - Sequence things that could be sequenced declaratively as separate steps
 
-**Limits.** Max 40 steps per flow. If you're approaching that, consider splitting into sub-flows (call them via `dispatch` from inside `transform-data`, or via `execute-agent` if it makes sense as an agent).
+**Keep flows focused.** When a flow grows large, consider splitting it into sub-flows (call them via `dispatch` from inside `transform-data`, or via `execute-agent` if the sub-step is more naturally an agent). The one enforced structural limit is nested `conditional` depth, capped at 10.

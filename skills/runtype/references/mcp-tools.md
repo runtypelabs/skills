@@ -4,6 +4,28 @@ The Runtype MCP server at `https://api.runtype.com/v1/mcp/protocol` exposes the 
 
 For Code Mode MCP, use the `search` and `execute` tools to inspect the generated API spec and run shaped JavaScript against the Runtype API. Call `get_build_instructions` before code-mode writes for products or flows, just as you would in standard MCP.
 
+Prefer live tool discovery and `get_platform_documentation` when available; this file is a fallback map.
+
+## Contents
+
+- [Discovery and identity](#discovery-and-identity)
+- [Validation (use before create)](#validation-use-before-create)
+- [Tools (creating, running)](#tools-creating-running)
+- [Flows (creating, running, versioning)](#flows-creating-running-versioning)
+- [Agents (creating, running, versioning)](#agents-creating-running-versioning)
+- [Products, surfaces, capabilities](#products-surfaces-capabilities)
+- [Records](#records)
+- [Schedules](#schedules)
+- [Conversations](#conversations)
+- [Tracing, logs, costs](#tracing-logs-costs)
+- [Batches and evals](#batches-and-evals)
+- [Secrets](#secrets)
+- [Models](#models)
+- [Persona widget tokens](#persona-widget-tokens)
+- [Sandboxes](#sandboxes)
+- [Platform docs](#platform-docs)
+- [Quick selection guide](#quick-selection-guide)
+
 ## Discovery and identity
 
 Start here when you need to understand the state of the workspace.
@@ -204,32 +226,31 @@ Schema feedback here is far more useful than waiting for create errors.
 | `generate_persona_embed_code` | **Generate ready-to-use embed code** — prefer this over hand-writing the embed |
 | `get_persona_theme_reference` | Design tokens, default palette, examples — call before generating themes       |
 
-## Sandboxes (Daytona)
+## Sandboxes
 
-| Tool              | Use                                                               |
-| ----------------- | ----------------------------------------------------------------- |
-| `deploy_sandbox`  | Deploy code to a Cloudflare Sandbox; returns a public preview URL |
-| `destroy_sandbox` | Tear down                                                         |
+| Tool              | Use                                                            |
+| ----------------- | -------------------------------------------------------------- |
+| `deploy_sandbox`  | Deploy code to a Runtype Sandbox; returns a public preview URL |
+| `destroy_sandbox` | Tear down                                                      |
 
 ## Platform docs
 
-| Tool                                      | Use                                           |
-| ----------------------------------------- | --------------------------------------------- |
-| `get_build_instructions`                  | Detailed instructions for building on Runtype |
-| `get_platform_documentation`              | Schemas, type definitions, docs               |
-| `generate_proposal` / `generate-proposal` | Scope-of-work proposal for a client project   |
+| Tool                         | Use                                              |
+| ---------------------------- | ------------------------------------------------ |
+| `get_build_instructions`     | Detailed instructions for building on Runtype    |
+| `get_platform_documentation` | Schemas, type definitions, docs                  |
+| `generate_proposal`          | Scope-of-work proposal tool for a client project |
+| `generate-proposal`          | MCP prompt variant of the proposal workflow      |
 
-Useful documentation topics include `platform-catalog`, `surface-types`, `flow-step-types`, `models`, `product-schema`, `types-fpo`, `types-flow-steps`, `types-entities`, `types-surface-configs`, `orthogonal-tools`, `builtin-tools`, `external-tools`, `dashboard-links`, `mock-ecommerce`, `persona-embed`, `persona-fullscreen-assistant`, and `sdk-reference`.
+Useful documentation topics include `platform-catalog`, `surface-types`, `flow-step-types`, `models`, `product-schema`, `types-fpo`, `types-flow-steps`, `types-entities`, `types-surface-configs`, `orthogonal-tools`, `builtin-tools`, `agent-skills`, `external-tools`, `dashboard-links`, `mock-ecommerce`, `persona-embed`, `persona-fullscreen-assistant`, and `sdk-reference`.
 
 For WebMCP page tools, read `persona-embed` and `types-surface-configs`. Configure
 `behavior.webmcp` on a `chat` surface; do not create an `mcp` surface unless you
-want to expose Runtype capabilities to external MCP clients.
-For advanced non-Persona chat UIs or server proxies, WebMCP-style tools can instead
-be sent directly to API-key `/v1/dispatch` as top-level `clientTools[]`; that path
-uses optional `clientToolsPolicy.allowlist` and `/v1/dispatch/resume`, not
-`behavior.webmcp` or dashboard discovery telemetry.
+want to expose Runtype capabilities to external MCP clients. See
+`persona-widget.md` for the full WebMCP setup and the advanced non-Persona
+direct-`/v1/dispatch` `clientTools[]` path.
 
-Useful MCP resources include `runtype://catalog/platform`, `runtype://catalog/surface-types`, `runtype://catalog/flow-step-types`, `runtype://catalog/models`, `runtype://schema/fpo`, `runtype://types/fpo`, `runtype://types/fpo-template`, `runtype://types/flow-steps`, `runtype://types/entities`, `runtype://types/surface-configs`, `runtype://catalog/orthogonal-tools`, `runtype://catalog/builtin-tools`, `runtype://guide/external-tools`, `runtype://guide/subagent-delegation`, `runtype://catalog/provider-native-search`, `runtype://catalog/dashboard-links`, `runtype://catalog/mock-ecommerce`, `runtype://catalog/ucp-commerce`, `runtype://catalog/persona-embed`, `runtype://guide/persona-fullscreen-assistant`, and `runtype://types/sdk-reference`.
+Useful MCP resources include `runtype://catalog/platform`, `runtype://catalog/surface-types`, `runtype://catalog/flow-step-types`, `runtype://catalog/models`, `runtype://schema/fpo`, `runtype://types/fpo`, `runtype://types/fpo-template`, `runtype://types/flow-steps`, `runtype://types/entities`, `runtype://types/surface-configs`, `runtype://catalog/orthogonal-tools`, `runtype://catalog/builtin-tools`, `runtype://catalog/skills`, `runtype://guide/external-tools`, `runtype://guide/subagent-delegation`, `runtype://catalog/provider-native-search`, `runtype://catalog/dashboard-links`, `runtype://catalog/mock-ecommerce`, `runtype://catalog/ucp-commerce`, `runtype://catalog/persona-embed`, `runtype://guide/persona-fullscreen-assistant`, and `runtype://types/sdk-reference`.
 
 ## Quick selection guide
 
