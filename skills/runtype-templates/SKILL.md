@@ -6,7 +6,7 @@ description: >-
   secrets, setup-required auth, validate_product and validate_product_* checks,
   distributable product packaging, import readiness, and avoiding credential leakage.
 user-invocable: true
-argument-hint: "[FPO or template task]"
+argument-hint: '[FPO or template task]'
 ---
 
 # Runtype Templates

@@ -9,7 +9,7 @@ description: >-
   generic LLM chat, unrelated AI frameworks, or non-AI infrastructure unless Runtype is
   explicitly part of the request.
 user-invocable: true
-argument-hint: "[Runtype goal or setup question]"
+argument-hint: '[Runtype goal or setup question]'
 ---
 
 # Runtype
@@ -52,13 +52,13 @@ also a good setup path for agent clients.
 
 Use this routing table instead of loading every Runtype detail into context:
 
-| User intent | Use |
-|---|---|
-| Build, deploy, or validate a product with agents, flows, tools, surfaces, records, secrets, schedules, or evals | `runtype-build-product` |
-| Inspect or modify a live account, debug failures, read logs/traces, compare evals, manage resources | `runtype-admin` |
-| Embed or theme a Persona chat widget, build fullscreen assistant layouts, use client tokens or browser-side local tools | `runtype-persona` |
-| Package a product as a distributable FPO template, handle pending secrets, validate import readiness | `runtype-templates` |
-| Use the TypeScript/Python SDK, CLI, Marathon, playbooks, sandboxes, or code-first stored/upsert/virtual workflows | `runtype-sdk-marathon` |
+| User intent                                                                                                                               | Use                     |
+| ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| Build, deploy, or validate a product with agents, flows, tools, surfaces, records, secrets, schedules, or evals                           | `runtype-build-product` |
+| Inspect or modify a live account, debug failures, read logs/traces, compare evals, manage resources                                       | `runtype-admin`         |
+| Embed or theme a Persona chat widget, build fullscreen assistant layouts, use client tokens, or configure WebMCP/browser-side local tools | `runtype-persona`       |
+| Package a product as a distributable FPO template, handle pending secrets, validate import readiness                                      | `runtype-templates`     |
+| Use the TypeScript/Python SDK, CLI, Marathon, playbooks, sandboxes, or code-first stored/upsert/virtual workflows                         | `runtype-sdk-marathon`  |
 
 ## Mental Model
 

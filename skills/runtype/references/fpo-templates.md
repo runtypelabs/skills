@@ -39,6 +39,7 @@ export interface FpoTemplateVariable {
 ## Validity
 
 A template is valid if it declares **at least one of**:
+
 - A template variable (something the importer fills in), or
 - A tool with `auth.setupRequired: true` and a non-empty `auth.secrets` array.
 
@@ -75,7 +76,11 @@ Declare the secret on the target tool's `auth.secrets` array in the wrapped `pro
         "auth": {
           "setupRequired": true,
           "secrets": [
-            { "key": "OPENAI_KEY", "label": "OpenAI API Key", "description": "Your OpenAI org's API key" }
+            {
+              "key": "OPENAI_KEY",
+              "label": "OpenAI API Key",
+              "description": "Your OpenAI org's API key"
+            }
           ]
         },
         "config": {
@@ -89,6 +94,7 @@ Declare the secret on the target tool's `auth.secrets` array in the wrapped `pro
 ```
 
 On import:
+
 - Platform sees `setupRequired: true` and the `auth.secrets` declaration.
 - It creates placeholder secret bindings with `status: 'needs_configuration'`.
 - It prompts the user to fill them via the intake flow.
@@ -121,13 +127,13 @@ Substitution happens at import time via `{{key}}`. Use these in any text field i
 
 ## Validation tools
 
-| Tool | Purpose |
-|---|---|
-| `validate_product` | Full product object — run before distributing |
-| `validate_product_tool` | A tool definition inside the FPO |
-| `validate_product_flow` | A flow definition |
-| `validate_product_agent` | An agent definition |
-| `validate_product_surface` | A surface definition |
+| Tool                       | Purpose                                       |
+| -------------------------- | --------------------------------------------- |
+| `validate_product`         | Full product object — run before distributing |
+| `validate_product_tool`    | A tool definition inside the FPO              |
+| `validate_product_flow`    | A flow definition                             |
+| `validate_product_agent`   | An agent definition                           |
+| `validate_product_surface` | A surface definition                          |
 
 These catch schema problems before the template lands in someone else's workspace.
 

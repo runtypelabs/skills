@@ -7,7 +7,7 @@ description: >-
   account mutations. Includes search/execute patterns, read-before-write, validation,
   pagination, and conservative destructive-change policy.
 user-invocable: true
-argument-hint: "[live account operation or debugging task]"
+argument-hint: '[live account operation or debugging task]'
 ---
 
 # Runtype Admin
@@ -53,20 +53,20 @@ Code Mode MCP exposes `search`, `execute`, `get_platform_documentation`,
 Use `search` first when unsure:
 
 ```js
-(spec) => spec.categories
+;(spec) => spec.categories
 ```
 
 Then inspect one method:
 
 ```js
-(spec) => spec.methods.updateAgent
+;(spec) => spec.methods.updateAgent
 ```
 
 Use `execute` with shaped results. Filter, project, slice, and aggregate inside the
 function before returning data so large responses do not consume context:
 
 ```js
-async (runtype) => {
+;async (runtype) => {
   const products = await runtype.listProducts()
   return products.products.map((p) => ({ id: p.id, name: p.name })).slice(0, 20)
 }
