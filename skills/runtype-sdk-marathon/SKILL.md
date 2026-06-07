@@ -6,7 +6,7 @@ description: >-
   built-in CLI tools, sandboxes, code-first stored/upsert/virtual agents or flows, local
   tools, hidden parameters, or source-controlled Runtype workflows.
 user-invocable: true
-argument-hint: "[SDK, CLI, or Marathon task]"
+argument-hint: '[SDK, CLI, or Marathon task]'
 ---
 
 # Runtype SDK And Marathon

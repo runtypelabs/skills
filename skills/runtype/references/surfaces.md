@@ -6,21 +6,21 @@ Many surfaces carry an `executionHint` that should be appended to the agent's sy
 
 ## Trait dimensions
 
-| Trait | What it controls |
-|---|---|
-| `streaming` | `required` / `optional` / `none` — whether streaming is supported (and required) |
-| `messagesMutable` | Whether messages in the thread can be edited after send (Slack, Discord, Telegram) |
-| `deliveryModel` | `real_time` / `sync` / `async` — how the platform delivers responses |
-| `mediaSupport` | `none` / `images` / `rich` — inbound and outbound media |
-| `interactiveUI` | `none` / `generative` / `forms` / `buttons` — interactive UI primitives the channel supports |
-| `inboundMediaSupport` | Whether the channel accepts inbound media (images, files) |
-| `consumerType` | `human` / `machine` / `agent` — informs the eval framing |
-| `reasoningVisibility` | `pass_through` / `always_strip` — whether `<thinking>` traces are exposed |
-| `markdownDialect` | `none` / `markdown` / `mdx` / `mrkdwn` / `html` |
-| `threadModel` | `flat` / `threaded` / `reply_chain` |
-| `senderIdentity` | `anonymous` / `authenticated` / `verified` |
-| `maxResponseLength` | Hard cap on output length (chars) |
-| `executionHint` | A formatting instruction appended to the agent's system prompt |
+| Trait                 | What it controls                                                                             |
+| --------------------- | -------------------------------------------------------------------------------------------- |
+| `streaming`           | `required` / `optional` / `none` — whether streaming is supported (and required)             |
+| `messagesMutable`     | Whether messages in the thread can be edited after send (Slack, Discord, Telegram)           |
+| `deliveryModel`       | `real_time` / `sync` / `async` — how the platform delivers responses                         |
+| `mediaSupport`        | `none` / `images` / `rich` — inbound and outbound media                                      |
+| `interactiveUI`       | `none` / `generative` / `forms` / `buttons` — interactive UI primitives the channel supports |
+| `inboundMediaSupport` | Whether the channel accepts inbound media (images, files)                                    |
+| `consumerType`        | `human` / `machine` / `agent` — informs the eval framing                                     |
+| `reasoningVisibility` | `pass_through` / `always_strip` — whether `<thinking>` traces are exposed                    |
+| `markdownDialect`     | `none` / `markdown` / `mdx` / `mrkdwn` / `html`                                              |
+| `threadModel`         | `flat` / `threaded` / `reply_chain`                                                          |
+| `senderIdentity`      | `anonymous` / `authenticated` / `verified`                                                   |
+| `maxResponseLength`   | Hard cap on output length (chars)                                                            |
+| `executionHint`       | A formatting instruction appended to the agent's system prompt                               |
 
 ## Surface type catalog
 
@@ -33,6 +33,10 @@ Website widget, support bots, conversational UIs.
 - `reasoningVisibility: pass_through` — reasoning is shown unless config opts out
 - `markdownDialect: mdx`
 - For the SDK and embed code, use `generate_persona_embed_code` and see `persona-widget.md`
+- Optional WebMCP page tools are configured under `behavior.webmcp`. They are
+  browser-side tools registered on `document.modelContext`, gated by
+  `enabled` plus origin-scoped allow-list rules, and executed by Persona in the
+  host page. Keep client-token `allowedOrigins` configured separately for CORS.
 
 ### `api`
 
@@ -174,6 +178,7 @@ So mapping three agents to one `mcp` surface gives you three MCP tools on one se
 When more than one capability is bound to a single **conversational** surface (`chat`, `slack`, `telegram`, `discord`, `email`, `whatsapp`, etc.), Runtype provisions an **orchestrator agent** automatically. It decides which capability handles each incoming message.
 
 Defaults are designed for fast, cheap routing:
+
 - Small inexpensive model
 - Minimum data over the wire
 - Alphabetical-label voting (A/B/C…)
@@ -187,6 +192,7 @@ If you need a custom router, you can replace the default — but try the default
 When an agent is bound to a surface, **surface-specific tools auto-register** with the agent. Same agent definition, different tool surface per channel.
 
 Examples:
+
 - **Persona chat**: artifact generation, document toolbar tools.
 - **Slack**: thread-context lookup, rich-mrkdwn formatting helpers.
 - **Telegram**, **Discord**: channel-appropriate helpers.
