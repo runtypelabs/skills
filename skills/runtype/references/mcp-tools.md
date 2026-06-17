@@ -202,17 +202,16 @@ Schema feedback here is far more useful than waiting for create errors.
 
 ## Models
 
-| Tool                         | Use                                                                    |
-| ---------------------------- | ---------------------------------------------------------------------- |
-| `list_available_models`      | Platform-wide model catalog                                            |
-| `list_model_configs`         | Workspace's configured models                                          |
-| `list_model_configs_grouped` | Grouped by base model                                                  |
-| `create_model_config`        | Add a model with provider key                                          |
-| `update_model_config`        | Update provider key or settings                                        |
-| `delete_model_config`        | Remove                                                                 |
-| `toggle_model_config`        | Enable/disable                                                         |
-| `set_default_model_config`   | Set provider default                                                   |
-| `run_prompt`                 | One-shot prompt against an LLM (useful for quick tests outside a flow) |
+| Tool                         | Use                             |
+| ---------------------------- | ------------------------------- |
+| `list_available_models`      | Platform-wide model catalog     |
+| `list_model_configs`         | Workspace's configured models   |
+| `list_model_configs_grouped` | Grouped by base model           |
+| `create_model_config`        | Add a model with provider key   |
+| `update_model_config`        | Update provider key or settings |
+| `delete_model_config`        | Remove                          |
+| `toggle_model_config`        | Enable/disable                  |
+| `set_default_model_config`   | Set provider default            |
 
 ## Persona widget tokens
 
@@ -256,8 +255,8 @@ Useful MCP resources include `runtype://catalog/platform`, `runtype://catalog/su
 ## Quick selection guide
 
 > "I want to test a single tool" → `execute_tool`
-> "I want to test an agent without committing" → `run_prompt` (truly one-shot) or `execute_agent` (against an existing agent)
-> "I want to test a flow with input" → `dispatch`
+> "I want to test an agent without committing" → `execute_agent` (against an existing agent)
+> "I want to run a one-shot prompt or test a flow with input" → `dispatch` (inline virtual flow with a single prompt step)
 > "I want to run a flow over a record set" → `submit_batch`
 > "I want to compare two prompts" → `submit_eval` + `compare_eval`
 > "Something failed — what happened?" → `trace_execution` → if not enough, `list_logs` with the execution id
