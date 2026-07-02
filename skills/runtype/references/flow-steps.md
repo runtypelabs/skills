@@ -71,6 +71,8 @@ Config: `http` (url, method, headers, body), `responseType` (`json` | `text` | `
 
 Lightweight HTTP. For anything more complex (auth, request templates, response mapping), use `api-call`.
 
+Requests originate from datacenter IPs and are identified as automated, non-human traffic, so some sites block, rate-limit, or serve a challenge/CAPTCHA page (a 403 or empty body where a browser would succeed). For research/scraping against sites that block bots, prefer the `firecrawl` fetch method / built-in tool or the `search` step (Exa), or use a mixed approach: try `fetch-url` first and fall back to Firecrawl/Exa on a block.
+
 ### `api-call`
 
 Structured API call with auth, request templates, and response mapping.
@@ -91,7 +93,7 @@ Crawl a website and extract content from pages.
 
 Config: `url`, `limit`, `depth`, `outputVariable`
 
-Uses Firecrawl or similar by default — check the workspace's integration config.
+Requires browser-rendering credentials configured in the workspace. Like `fetch-url`, crawl traffic egresses from Runtype's datacenter IPs identified as non-human, so sites behind a WAF or anti-bot service may block or rate-limit it. For research against sites that block bots, prefer the `firecrawl` or `exa` built-in tools — these reach the content through the vendor's own retrieval infrastructure rather than crawling the site directly from Runtype's IPs. A mixed approach (crawl where allowed, Firecrawl/Exa where blocked) is often most reliable.
 
 ### `search`
 
