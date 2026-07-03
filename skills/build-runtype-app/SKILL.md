@@ -34,13 +34,16 @@ Ship it at the bundle root. It declares everything the app may touch:
     "flows": ["flow_..."],
     "agents": ["agent_..."]
   },
-  "data": [],
+  "data": [
+    { "namespace": "retro_card", "access": "read-write" },
+    { "namespace": "retro_summary", "access": "read" }
+  ],
   "auth": "none"
 }
 ```
 
 - `capabilities.flows` / `capabilities.agents`: the flows and agents the app's browser sessions may dispatch (via `/v1/client/*`). Every id must exist and belong to the app owner; upload fails otherwise. Activation scopes the app's client token to exactly this set.
-- `data`: reserved for the app records data plane (namespace grants). Leave `[]` for now.
+- `data`: the record namespaces the app may read or write (see the data plane below). Each entry grants `read` or `read-write` on records of that `namespace`. Leave `[]` if the app does not persist data.
 - `auth`: must be `"none"`. `"optional"` / `"required"` are reserved for Log in with Runtype and are rejected at upload (422).
 
 ## Bundle rules
@@ -71,6 +74,95 @@ const init = await fetch(`${apiUrl}/v1/client/init`, {
 ```
 
 The client token is origin-locked to the app's own URL and scoped to the manifest's flows/agents. Rotating it never requires a redeploy.
+
+## The records data plane (persisting data)
+
+An app persists data through `/v1/client/records`, governed entirely by the manifest's `data[]` grants. Records are stored under the app owner's account; the app's anonymous browser sessions can only touch the namespaces the manifest grants, and only `read-write` namespaces accept writes. There is no SQL, no schema migration: a record is `{ id, namespace, name, metadata }` where `metadata` is any JSON object.
+
+Every records call is **session-authed** with the session id from `/v1/client/init` (the same session you use for chat). For a data-only app (no flows/agents in the manifest), `init` still returns a session — the response carries an `app` object instead of a `flow` object.
+
+```
+GET    /v1/client/records?sessionId=…&namespace=retro_card   list (cursor-paginated)
+POST   /v1/client/records                                    create { sessionId, namespace, name?, metadata }
+GET    /v1/client/records/:id?sessionId=…                    read one
+PUT    /v1/client/records/:id                                update { sessionId, name?, metadata?, expectedUpdatedAt? }
+DELETE /v1/client/records/:id?sessionId=…                    delete
+```
+
+Rules to design around:
+
+- The `namespace` must appear in the manifest's `data[]`, or the call returns 403. Writes (POST/PUT/DELETE) require `access: "read-write"`; a `read` namespace is list/get only.
+- `name` is unique per namespace within the owner's account. Omit it to auto-assign a unique id; pass your own to make a record addressable/upsert-like (a duplicate name returns 409).
+- `metadata` is capped at 64 KB serialized. The reserved `_app` key is stripped from your input and used for server-set provenance, so don't rely on it.
+- Each app holds at most 10,000 records across all its namespaces. A create over the cap returns 403 — delete unused records or split data across apps. Design UIs that prune (e.g. cap a list, delete on dismiss) rather than accumulate unbounded rows.
+- Writes (POST/PUT/DELETE) are rate limited per app and per session. A burst over the limit returns 429 with a `Retry-After` header — back off and retry; don't hammer in a tight loop. Reads are not rate limited. Batch UI actions so a single user gesture is a small number of writes.
+- `PUT` is a full metadata replace and is last-write-wins by default. When two anonymous sessions can edit the same record (collaborative apps — a shared retro board), pass `expectedUpdatedAt` (the `updatedAt` from your last read) for optimistic concurrency: if another session changed the record since, the update is rejected with 409 and the body carries the current record (`{ error, hint, record }`) so you can rebase and retry. Omit it to keep last-write-wins.
+- List is newest-first and cursor-paginated: follow `nextCursor` until it is `null` (default page size 50, max 100).
+- App-created records show up in the owner's dashboard Records views under a per-app record `type` of `app:{appId}:{namespace}`. App data is always isolated from the owner's other record types: the data plane can never read or write a bare record type, and two apps never share data. Flows or agents that should consume app data address the prefixed type directly (e.g. a get-records step over `app:app_01h…:retro_card`).
+
+### End-to-end example (a data-only app)
+
+```html
+<!doctype html>
+<html>
+  <body>
+    <ul id="cards"></ul>
+    <input id="text" placeholder="Add a card" />
+    <button id="add">Add</button>
+    <script>
+      const { apiUrl, clientToken } = window.__RUNTYPE_APP__
+      let sessionId
+
+      async function api(path, init) {
+        const res = await fetch(`${apiUrl}${path}`, {
+          ...init,
+          headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+        })
+        if (!res.ok) throw new Error(`${path}: ${res.status}`)
+        return res.status === 204 ? null : res.json()
+      }
+
+      async function start() {
+        const init = await api('/v1/client/init', {
+          method: 'POST',
+          body: JSON.stringify({ token: clientToken }),
+        })
+        sessionId = init.sessionId
+        await render()
+      }
+
+      async function render() {
+        const { data } = await api(`/v1/client/records?sessionId=${sessionId}&namespace=retro_card`)
+        document.getElementById('cards').innerHTML = data
+          .map((r) => `<li>${r.metadata.text}</li>`)
+          .join('')
+      }
+
+      document.getElementById('add').onclick = async () => {
+        const text = document.getElementById('text').value
+        await api('/v1/client/records', {
+          method: 'POST',
+          body: JSON.stringify({ sessionId, namespace: 'retro_card', metadata: { text } }),
+        })
+        document.getElementById('text').value = ''
+        await render()
+      }
+
+      start()
+    </script>
+  </body>
+</html>
+```
+
+The matching `runtype.app.json` only needs the namespace grant:
+
+```json
+{
+  "name": "Retro Board",
+  "data": [{ "namespace": "retro_card", "access": "read-write" }],
+  "auth": "none"
+}
+```
 
 ## Constraints to design around
 
