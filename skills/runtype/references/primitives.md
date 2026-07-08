@@ -253,7 +253,7 @@ The right mental model: **records are correlation keys plus agent memory**, not 
 
 The simplest useful pattern: give an agent record read/write/update tools. That's how the agent "remembers" what users asked it to do.
 
-Operations: `create_record`, `update_record`, `get_record`, `list_records`, `bulk_edit_records`, `bulk_delete_records`. Flow steps: `retrieve-record`, `upsert-record`, `update-record`. Per-record execution data: `get_record_results`, `get_record_step_results`, `get_record_costs`. Vector: `generate-embedding`, `store-vector`, `vector-search` flow steps.
+Operations: `create_record`, `update_record`, `get_record`, `list_records`, `bulk_edit_records`, `bulk_delete_records`. Flow steps: `get-record`, `list-records`, `upsert-record`, `update-record`. Per-record execution data: `get_record_results`, `get_record_step_results`, `get_record_costs`. Vector: `generate-embedding`, `store-vector`, `vector-search` flow steps.
 
 Filtering supports complex queries: contains/equals on metadata fields, group ANDs/ORs, filter on top-level columns. Test filters in a flow first (you can run iteratively), then move to a schedule with the same filter.
 

@@ -93,7 +93,7 @@ These are sketches, not copy-paste configs — the exact JSON shapes are best di
    - `source` records (one per source URL, with metadata).
    - `digest` records (one per day's summary).
 2. **Flow**: `create_flow`:
-   - Step 1: `retrieve-record` with `recordFilter: { type: "source" }` — load all sources.
+   - Step 1: `list-records` with `recordFilter: { type: "source" }` — load all sources (array, newest-first).
    - Step 2: `transform-data` — for each source, run an async fetch (a small `Promise.all` over `crawl` or `fetch-url` operations is OK, or split into a sub-flow if it gets messy).
    - Step 3: `prompt` — summarize new content; produce a structured digest object.
    - Step 4: `upsert-record` — store the digest as a `digest` record with today's date as `name`.
