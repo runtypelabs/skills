@@ -35,9 +35,23 @@ These are the errors most agents make. Read this section first.
 
 ## CDN base URL
 
+Load Persona from Runtype's first-party CDN. For ordinary embeds use the `latest` channel
+so you always get the current release:
+
 ```
-https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist
+https://cdn.runtype.com/persona/latest
 ```
+
+Use `cdn.runtype.com` everywhere. It is **required** when the widget is embedded on a page
+deployed through Runtype (a `static` app or any Runtype-hosted page): those pages ship a
+strict Content Security Policy that only allows scripts and styles from the page's own
+origin and `https://cdn.runtype.com`. Third-party CDNs (jsdelivr, unpkg, esm.sh) are
+blocked and fail silently — the `<script>` tag never loads and no widget appears.
+
+**Pin an exact version on Runtype-deployed pages.** A deployed app bundle is immutable and
+cached, so on a `static` app (or any Runtype-hosted page) replace `latest` with a pinned
+version like `https://cdn.runtype.com/persona/4.6.0/...` so a new release never shifts the
+widget code underneath your shipped bundle.
 
 ## Client token
 
@@ -58,7 +72,7 @@ One script tag, no CSS import needed.
 
 ```html
 <script
-  src="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/install.global.js"
+  src="https://cdn.runtype.com/persona/latest/install.global.js"
   data-runtype-token="YOUR_CLIENT_TOKEN"
 ></script>
 ```
@@ -68,7 +82,7 @@ To mount in a specific container:
 ```html
 <div id="chat"></div>
 <script
-  src="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/install.global.js"
+  src="https://cdn.runtype.com/persona/latest/install.global.js"
   data-runtype-token="YOUR_CLIENT_TOKEN"
   data-config='{"target":"#chat","apiUrl":"https://api.runtype.com"}'
 ></script>
@@ -79,16 +93,13 @@ To mount in a specific container:
 Full control. Requires loading `widget.css` separately.
 
 ```html
-<link
-  rel="stylesheet"
-  href="https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/widget.css"
-/>
+<link rel="stylesheet" href="https://cdn.runtype.com/persona/latest/widget.css" />
 <div id="chat"></div>
 <script type="module">
   import {
     initAgentWidget,
     markdownPostprocessor,
-  } from 'https://cdn.jsdelivr.net/npm/@runtypelabs/persona@latest/dist/index.js'
+  } from 'https://cdn.runtype.com/persona/latest/index.js'
 
   initAgentWidget({
     target: '#chat',
