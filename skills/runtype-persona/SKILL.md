@@ -55,12 +55,14 @@ more embed prose to this skill.
 
 - Package: `@runtypelabs/persona`.
 - CDN base (Runtype's first-party CDN): `https://cdn.runtype.com/persona/latest` for
-  ordinary embeds. Use `cdn.runtype.com` everywhere — it is **required** on pages deployed
-  through Runtype (a `static` app or any Runtype-hosted page): their strict CSP only allows
-  scripts/styles from the page origin and `https://cdn.runtype.com`, so third-party CDNs
-  (jsdelivr, unpkg, esm.sh) are blocked and fail silently. On a Runtype-deployed page,
-  replace `latest` with a pinned version (e.g. `/persona/4.6.0/`) so a new release can't
-  shift the widget code under your immutable app bundle.
+  ordinary embeds. Use `cdn.runtype.com` everywhere — it is the recommended source on every
+  surface (first-party, immutable, no third-party trust), and it is **required** on
+  `publish_page` preview pages, whose strict CSP allows no other script source (third-party
+  CDNs are blocked there and fail silently). Deployed `static` apps allow scripts and styles
+  from any https origin by default (authors can re-tighten via the manifest `csp` field), so
+  third-party CDNs load — but the first-party CDN is still the right choice for Persona. On
+  a Runtype-deployed page, replace `latest` with a pinned version (e.g. `/persona/4.6.0/`)
+  so a new release can't shift the widget code under your immutable app bundle.
 - Global script: `https://cdn.runtype.com/persona/latest/install.global.js`.
 - ESM entry: `https://cdn.runtype.com/persona/latest/index.js`.
 - CSS for ESM/npm usage: `@runtypelabs/persona/widget.css` (or `https://cdn.runtype.com/persona/latest/widget.css` for CDN/ESM installs).
