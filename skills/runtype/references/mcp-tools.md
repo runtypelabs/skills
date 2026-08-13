@@ -30,6 +30,14 @@ Prefer live tool discovery and `get_platform_documentation` when available; this
 
 Start here when you need to understand the state of the workspace.
 
+Resource discovery tools with potentially large rows (`list_products`, `list_agents`,
+`list_flows`, `list_tools`, `list_records`, `list_collections`, `list_skills`, and
+`list_schedules`) use a
+compact response by default: string values longer than 100 characters end in `…`. Keep
+that bounded form while browsing, then use the matching `get_*` tool for one resource.
+Pass `view: "full"` only when complete strings are required across the page.
+`list_agents` accepts `agent_type` (`runtype`, `external`, or `claude_managed`).
+
 | Tool                                                | Use for                                       |
 | --------------------------------------------------- | --------------------------------------------- |
 | `get_me`                                            | Confirm auth context — user id, org id, email |
@@ -39,6 +47,8 @@ Start here when you need to understand the state of the workspace.
 | `list_tools`                                        | All tools                                     |
 | `list_surfaces`                                     | Surfaces for a given product                  |
 | `list_records`                                      | Records (filterable by type)                  |
+| `list_collections`                                  | Registered record types and schemas           |
+| `list_skills`                                       | Agent skills                                  |
 | `list_schedules`                                    | All schedules                                 |
 | `list_secrets`                                      | All secrets (metadata only)                   |
 | `list_conversations`                                | All conversations                             |
