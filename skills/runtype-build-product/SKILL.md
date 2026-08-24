@@ -70,6 +70,10 @@ finding, and ask whether to use UCP or the traditional commerce path before proc
 
 1. Discover account state with `get_me`, `list_products`, `list_agents`, `list_flows`,
    `list_tools`, `list_model_configs`, and product-scoped `list_surfaces` when relevant.
+   These large inventory tools use compact string previews by default; keep that shape
+   for discovery, use `agent_type` when narrowing agents, and call the matching `get_*`
+   tool for complete configuration. Request `view: "full"` only when complete strings
+   are needed for every row.
 2. Pick surfaces from the live `surface-types` docs. Include `messaging` as the generic
    multi-channel surface, and prefer dedicated surfaces when channel constraints matter.
    For browser-side WebMCP tools, use a `chat` surface with `behavior.webmcp` rather
