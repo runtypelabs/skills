@@ -238,7 +238,7 @@ Each surface has:
 - For hosted pages: product-level `HostedPageBehavior` and per-capability
   `HostedPagePresentation` in `runtype://types/surface-configs`
 
-Lifecycle: `create_surface` → `add_surface_item` (wire a capability in) → `update_surface` / `delete_surface`. Slack-specific: `install_slack_integration` for OAuth.
+Lifecycle: `create_surface` → `add_surface_item` (wire a capability in) → `update_surface` / `delete_surface`. Slack-specific: connect the workspace with the `slack-setup` runbook (`runtype://guide/slack-setup`); `install_slack_integration` is only for a caller who already holds a bot token and signing secret.
 
 ## Record
 
