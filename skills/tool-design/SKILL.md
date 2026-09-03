@@ -147,30 +147,61 @@ Every tool must pass all of these before it reaches an agent:
 
 ## On Runtype
 
-The rules are the same; the platform provides the enforcement:
+Everything above is framework-neutral. Building natively on Runtype, the platform
+already implements most of the enforcement, so the job is knowing which mechanism
+carries which pattern.
 
-- Runtime tools are defined by `name`, `description`, `parametersSchema` (JSON Schema),
-  a `toolType` (`external`, `custom`, `mcp`, `local`, `flow`, `subagent`, and more),
-  and `config`. Create and test them with the MCP tools `create_tool`, `execute_tool`,
-  and `validate_flow`; read `get_platform_documentation(topic="external-tools")` and
-  `get_platform_documentation(topic="limits")` before designing.
-- Credentials are `{{secret:KEY}}` references resolved server-side; hidden parameters
-  (`hiddenParameterNames`) are stripped from the model-facing schema and re-injected
-  at execution. Both are the platform's secret-injection and context-injection seams.
-- Approval gates (`config.tools.approval.require`) are the permission gate for
-  irreversible or costly commands. The agent-supplied approval reason is display-only
-  and never a control signal.
-- Tool calls cap at 30 seconds. Longer work belongs in a flow step or a subagent, which
-  is the platform's async-job shape.
-- A request carries at most 50 runtime tools, and tool search activates at 20, after
-  which rarely used tools are found by search rather than seen up front. Fewer,
-  better-described tools beat many near-duplicates.
+### Which tool kind carries which pattern
 
-## Do not
+| Tool kind (`toolType`) | What it is                                                       | Patterns it carries                                                                      |
+| ---------------------- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `external`             | HTTP call defined by `url`, `method`, `headers`, `body` template | Tool Adapter, Secret Injection (`{{secret:KEY}}`), request mapping (the `body` template) |
+| `custom`               | Sandboxed code, 30 s cap, no network egress                      | Parameter Coercion, Response Shaper, Error Classification, Natural Identifier resolution |
+| `flow`                 | A saved flow exposed as one tool, run synchronously              | Task Bundle, Tool Chain, Compensation (per-step `errorHandling`)                         |
+| `subagent`             | Delegation to a saved or inline agent (`agentId` or `agent`)     | Abstraction Ladder (the orchestrated rung), Scatter-Gather, Async Job (detached mode)    |
+| `local`                | Executed by the client (browser widget or SDK caller)            | Confirmation Request, Resource Reference, anything needing the user's environment        |
+| `mcp`                  | A tool discovered from an MCP server                             | Tool Gateway, Tool Registry (`discover_mcp_server_tools`)                                |
+| `builtin` / Orthogonal | Platform catalog tools (attached by id, not created)             | Canonical Tool Model, house style for descriptions                                       |
 
-- Do not accept credentials, tokens, or tenant ids as model-visible parameters.
-- Do not return the raw upstream payload.
-- Do not return a bare status code or exception string as the error.
-- Do not write descriptions for the developer reading the code.
-- Do not build composite tools before atomic usage is observed.
-- Do not put access-control rules only in the system prompt.
+An `external` tool returns the upstream response as-is; shape it in a `flow` tool
+(`api-call` step into `transform-data`) or in a downstream `transform-data` step. A
+`custom` tool has no network egress, so it cannot make the call itself. Long-running work is not
+a `flow` tool either: a `subagent` tool with `config.execution.mode: "detached"` returns
+a run handle, and `run_flow` with `async: true` returns an execution id (see
+`tool-design-execution`).
+
+The MCP `create_tool` accepts `tool_type` in `flow`, `custom`, `external`, `graphql`,
+`mcp`, `local`, with `name`, `description`, `parameters_schema` (JSON Schema), and
+`config`. The REST API and SDKs (`POST /v1/tools`, spelled `toolType` and
+`parametersSchema`) accept the same set plus `subagent`; over MCP, delegate instead
+through the agent's `config.tools.subagentConfig`. `builtin` tools are never created;
+attach them by id through `config.tools.toolIds`. Iterate with `update_tool` and
+`get_tool`; read `get_platform_documentation(topic="external-tools")` and
+`get_platform_documentation(topic="limits")` before designing.
+
+### What the platform enforces for you
+
+- Credentials: `{{secret:KEY}}` references resolve server-side and are the only
+  credential contract. Never collect secret values in chat; hand the user the intake
+  URL from `get_secret_intake_manifest`.
+- Context injection: `hiddenParameterNames` strips parameters from the model-facing
+  schema and re-merges them from execution context.
+- Permission gate: `config.tools.approval.require` pauses the run for a human on the
+  listed tools; the agent's `_approvalReason` is display-only, never a control signal.
+- Audit: every tool call is traced on the run and visible in Runs, Logs, and
+  `trace_execution`.
+- Timeouts: a tool call is capped at 30 s; longer work moves to a flow step (5 min
+  step budget) or a subagent.
+- Tool count: 50 runtime tools per request; at 20 the `tool_search` meta-tool
+  activates and only a hot set is loaded each turn.
+- Save-time checks: `validate_flow` reports several checklist rows as stable codes
+  (see `references/checklist.md`, "Checked for you on Runtype").
+
+### The test loop
+
+1. `execute_tool` with the inputs an agent will plausibly send, including wrong ones,
+   and read the result and error as the model would.
+2. Wire it into an agent and run a realistic prompt with `execute_agent` or `dispatch`.
+3. When a real run misuses the tool, pin it: `add_eval_case_from_execution`, then
+   `run_eval_suite` after every description or schema change. Read
+   `get_platform_documentation(topic="evals")` for tool-use eval layers.

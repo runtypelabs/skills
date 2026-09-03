@@ -108,10 +108,12 @@ call ran in.
 
 ### Inject what the agent would not think to ask for (Context Injection)
 
-Team id, timezone, locale, region, and feature flags are supplied from context by
-default and remain overridable by explicit parameters. Document what is injected,
-return the effective values in the response, and expand machine ids to names where a
-human will read the result.
+Timezone, locale, region, and feature flags are supplied from context by default and
+may be overridden by explicit parameters. Authorization scope (team, organization,
+tenant) is also injected from context, but it is never overridable by the model: a tool
+that needs to act on another team resolves that through the permission gate, not through
+a parameter. Document what is injected, return the effective values in the response, and
+expand machine ids to names where a human will read the result.
 
 ### Boundaries are enforced, not described (Context Boundary)
 
@@ -131,14 +133,28 @@ Violations return a clear, logged error.
 
 ## On Runtype
 
-- `{{secret:KEY}}` references resolve from the managed secret store at execution and
-  are the only credential contract for tools; never collect secret values in chat, and
-  hand users the dashboard intake URL from `get_secret_intake_manifest` instead.
-- Hidden parameters (`hiddenParameterNames` on a runtime tool, hidden parameters in the
-  SDK) strip auth context and tenant ids from the model-facing schema and re-merge
-  them from the execution context, which is the context-injection seam.
-- Approval gates (`config.tools.approval.require` listing tool names) pause the run for
-  a human; the agent's `reason` is display-only and must never drive the decision.
-- Every tool call is traced and logged on the run; the platform supplies the audit
-  trail, so tools only need to keep secrets out of their parameters and results.
-- Read `get_platform_documentation(topic="agent-design")` for the approval-gate contract.
+- **Secrets.** `{{secret:KEY}}` references resolve from the managed secret store at
+  execution and are the only credential contract. They are honored in HTTP surfaces
+  only: `external` tool `url`, `headers`, `body`, and auth, and the HTTP flow steps
+  (`fetch-url`, `api-call`, `wait-until`, `paginate-api`). Never collect secret values
+  in chat; hand users the dashboard intake URL from `get_secret_intake_manifest`, and
+  create pending secrets with `create_secret` (no `value`) so the reference resolves
+  once the owner fills it in.
+- **Context injection.** `hiddenParameterNames` on a runtime tool (hidden parameters
+  in the SDK) strip auth context and tenant ids from the model-facing schema and
+  re-merge them from the execution context.
+- **Permission gate.** `config.tools.approval.require` lists the tools that pause for
+  a human; `timeout` bounds the wait; `requestReason` asks the model for a
+  justification carried as the reserved `_approvalReason` parameter; `choices`
+  (`alwaysAllow`, `alwaysDeny`) offers persistent decisions at the prompt. The reason
+  is display-only and must never drive the decision. On client-token and Persona
+  surfaces the account owner approves, not the end user.
+- **Session context.** Durable working state belongs in `save_memory` /
+  `recall_memory` (gated by `config.memory.enabled`) or in records, not in an
+  ever-growing message array or a hand-rolled session store.
+- **Audit.** Every tool call is traced on the run (`trace_execution`,
+  `list_logs`), so tools only need to keep secrets out of their parameters and
+  results.
+- Read `get_platform_documentation(topic="agent-design")` for the approval-gate
+  contract and `get_platform_documentation(topic="external-tools")` for the secret
+  syntax rules.

@@ -147,11 +147,25 @@ whether partial results are attached, and whether an async variant exists. See
 ## On Runtype
 
 - An `external` tool's upstream error body is what the model sees unless the tool
-  shapes it; map upstream status codes to the four classes in the tool or in a
+  shapes it; map upstream status codes to the four classes in a `custom` tool or in a
   `transform-data` step that follows it.
-- The platform's own approval and client-tool pauses are not errors: `await` frames
-  mean "waiting on a human or the client", and an agent surface must render them as
-  such rather than as failures.
+- **Confirmation requests have a native carrier on chat surfaces.** Behind a Persona
+  widget, expose the built-in local tools (`features.askUserQuestion.expose`,
+  `features.suggestReplies.expose`) so an ambiguous match becomes a rendered choice
+  the user taps, rather than a JSON options blob the model has to narrate. Elsewhere,
+  return the options in the tool result as above.
+- **Know which steps swallow and which fail** when `errorHandling` is unset:
+  `fetch-url`, `api-call`, `crawl`, and `search` continue with `defaultValue`;
+  `paginate-api` fails; `upsert-record` and `update-record` report `success: false`
+  and write no output when their input contract is not met (missing source, no
+  resolvable target), while operation failures still swallow. Set `errorHandling` to
+  `"fail"` or `"continue"` explicitly on any step whose swallow would hide a real
+  failure from the agent.
+- The platform's own pauses are not errors: `await` frames mean "waiting on a human
+  or the client" (approval, client tool, elicitation, detached run), and an agent
+  surface must render them as such rather than as failures.
+- Retryable errors from tools are retried by the model, not the platform, so
+  `retryAfterSeconds` in the result is what stops a tight loop.
 - Test failure paths with `execute_tool` using deliberately wrong inputs before wiring
   the tool into an agent, and capture real failures as eval cases with
   `add_eval_case_from_execution` so the fix is pinned.
