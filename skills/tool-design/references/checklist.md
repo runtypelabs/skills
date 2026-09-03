@@ -39,9 +39,30 @@ column names the skill section that explains the fix.
 | 32  | Required scopes are declared and pre-checked                                           | Scope Declaration (tool-design-security)               |
 | 33  | Invocations are logged with redacted parameters and a result                           | Audit Trail (tool-design-security)                     |
 | 34  | The agent can establish who it is acting as                                            | Identity Anchor (tool-design-security)                 |
-| 35  | Injected context is documented, overridable, and echoed in the result                  | Context Injection (tool-design-security)               |
+| 35  | Injected context is documented and echoed; only preferences are model-overridable      | Context Injection (tool-design-security)               |
 | 36  | Root paths, tenant scope, and host allowlists are enforced in code                     | Context Boundary (tool-design-security)                |
 | 37  | Destructive or costly commands have a preview mode, an approval gate, or both          | Operation Mode, Permission Gate                        |
 | 38  | Sequences the agent always runs together are bundled; per-item loops have a batch form | Task Bundle, Batch Operation (tool-design-composition) |
 | 39  | The tool count stays within what the model can hold, or discovery tools exist          | Tool Registry, Capability Matching                     |
 | 40  | Behavior changes ship as a new version with a migration note, not in place             | Tool Versioning (tool-design-composition)              |
+
+## Checked for you on Runtype
+
+When the tool set is built natively on Runtype, `validate_flow` and
+`validate_product` report these rows as stable codes at save time. Fix the code and
+the row passes; the remaining rows are still yours to review by hand.
+
+| Row | Code                                  | What fires it                                                                                                                                            |
+| --- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `RESERVED_TOOL_NAME`                  | A runtime tool's sanitized name collides with the platform's `runtype_set_state`                                                                         |
+| 5   | `OPTIONAL_PARAM_IN_TOOL_TEMPLATE`     | An optional parameter is interpolated into an `external` tool's url, header, or body with no default, so an omitted argument ships a literal placeholder |
+| 10  | `TOOL_CALL_STEP_UNKNOWN_CATALOG_TOOL` | A `tool-call` step names a catalog tool id that nothing answers to                                                                                       |
+| 11  | `UPSERT_RECORD_SOURCE_NOT_JSON`       | A string-producing step feeds `upsert-record`, which needs a JSON object                                                                                 |
+| 17  | `FETCH_CLASS_SWALLOWING_FEED`         | A fetch-class step with unset `errorHandling` feeds a transform or record write, so a dead API reads as an empty result                                  |
+| 3   | `TOOL_STRATEGY_REQUIRED_MULTISTEP`    | Forced tool choice on a multi-step prompt, which returns empty output                                                                                    |
+| 3   | `TOOL_STRATEGY_NONE_WITH_TOOLS`       | Tools attached but `toolCallStrategy: "none"` forbids calling any of them                                                                                |
+| 30  | `RUNTIME_TOOLS_INVALID`               | The `runtimeTools` block fails structural validation, including a reserved name                                                                          |
+
+Enforced at runtime rather than at save time: the 30 s tool timeout (row 26), the
+50-tool request cap and `tool_search` activation at 20 (row 39), `{{secret:KEY}}`
+resolution (row 30), `hiddenParameterNames` (row 35), and approval gates (row 37).

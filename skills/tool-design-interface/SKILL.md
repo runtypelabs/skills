@@ -157,12 +157,28 @@ variation; it never widens a constrained enum or bypasses validation.
 
 ## On Runtype
 
-- A runtime tool's `parametersSchema` is JSON Schema and is exactly what the model
-  sees; `description` is the model-facing text. Set both deliberately on `create_tool`
-  and `update_tool`, and validate with `validate_flow` for inline tools.
-- `hiddenParameterNames` remove context-supplied parameters from the schema; use them
-  instead of asking the model to pass tenant or auth context.
-- Descriptions drive both tool selection and the `tool_search` ranking that activates
+- `parametersSchema` is JSON Schema and is exactly what the model sees; `description`
+  is the model-facing text. Set both deliberately on `create_tool` and `update_tool`,
+  and run `validate_flow` for inline tools.
+- Hidden parameters (`hiddenParameterNames`) remove context-supplied parameters from
+  the schema; use them instead of asking the model to pass tenant or auth context.
+- **Reserved names and parameters.** `runtype_set_state` is a platform tool name; a
+  runtime tool whose sanitized, model-facing name collides with it is rejected at
+  save time (`RESERVED_TOOL_NAME`) and dropped at dispatch. `_approvalReason` is a
+  reserved parameter the platform appends to approval-gated tools; never declare it
+  yourself.
+- **External tool templates.** In `body`, write `{{param}}` with no surrounding quotes;
+  values are typed automatically (strings quoted, numbers and booleans bare, objects
+  serialized). URL and header templates substitute raw text. An optional parameter
+  interpolated with no fallback ships a literal `{{param}}` when omitted; the validator
+  flags it as `OPTIONAL_PARAM_IN_TOOL_TEMPLATE`. Give it a default or make it required.
+- **Per-tool settings** for catalog tools ride `toolConfigs` (agent plane) or
+  `toolConfig` (a `tool-call` step), never extra parameters the model must fill.
+- **Tool choice strategy.** `toolCallStrategy: "required"` on a multi-step prompt
+  returns empty output, and `"none"` with tools attached silently drops them; the
+  validator reports `TOOL_STRATEGY_REQUIRED_MULTISTEP` and
+  `TOOL_STRATEGY_NONE_WITH_TOOLS`.
+- Descriptions drive both model choice and the `tool_search` ranking that activates
   at 20 tools, so a vague description hides the tool twice.
 - Built-in and Orthogonal tools ship with reviewed descriptions; read them through
   `get_platform_documentation(topic="builtin-tools")` and

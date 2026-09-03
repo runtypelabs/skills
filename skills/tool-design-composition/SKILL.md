@@ -147,14 +147,26 @@ Cache the status briefly.
 
 ## On Runtype
 
-- A dispatch carries at most 50 runtime tools, and at 20 the platform partitions them
-  into a hot set plus a `tool_search` meta-tool; keep must-use tools under the
-  threshold and let the long tail be search-loaded. Descriptions drive both model
-  choice and search ranking.
-- Flows are the platform's tool chain: fixed step order, data passing, per-step error
-  handling. Expose a flow as a tool (`toolType: "flow"`) when the agent should run the
-  whole sequence as one call, which is the task-bundle shape.
-- Subagents are the orchestrated rung of the ladder; read
-  `get_platform_documentation(topic="subagent-delegation")` for their caps.
-- `discover_mcp_server_tools` and `get_platform_documentation(topic="builtin-tools")`
-  are the registry for MCP and built-in tools; `list_tools` covers saved tools.
+- **Tool count and residency.** A dispatch carries at most 50 runtime tools. At 20
+  the platform partitions them into a hot set plus a `tool_search` meta-tool. Pin the
+  must-use tools with `config.tools.toolSearch.alwaysLoaded` (or `alwaysLoaded: true`
+  on the tool), raise or lower the cut with `toolSearch.threshold`, or set
+  `toolSearch.enabled: false` to force every tool into context. Descriptions drive
+  both model choice and search ranking.
+- **Task bundle and tool chain.** A flow is the platform's explicit chain: fixed step
+  order, data passing, per-step error handling. Expose it as one tool
+  (`toolType: "flow"`) when the agent should run the whole sequence as a single call.
+- **Abstraction ladder.** Built-in and Orthogonal catalog tools are the low rung,
+  `custom` and `external` tools the middle, flows and subagents the top. Subagents
+  have their own caps; read `get_platform_documentation(topic="subagent-delegation")`.
+- **Operation mode.** A `tool-call` flow step runs a catalog tool deterministically
+  with no approval gate, so a preview mode must be a distinct tool or a `mode`
+  parameter; do not rely on the gate to make a step safe.
+- **Registry and discovery.** `list_tools` covers saved tools,
+  `discover_mcp_server_tools` an MCP server, and
+  `get_platform_documentation(topic="builtin-tools")` the catalog. A `tool-call` step
+  that names a catalog id nobody answers to is rejected as
+  `TOOL_CALL_STEP_UNKNOWN_CATALOG_TOOL`.
+- **Versioning.** Agents and flows are versioned (`publish_agent_version`,
+  `publish_flow_version`); a tool behavior change ships behind a new published version
+  rather than in place.

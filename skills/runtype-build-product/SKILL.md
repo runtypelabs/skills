@@ -63,6 +63,13 @@ Start with an agent unless the work is a fixed sequence. Use flows for determini
 pipelines, indexing, batch processing, artifact rendering, and hot paths that should be
 cheap and fast. Use subagents or multiple capabilities instead of one giant prompt.
 
+When the product needs a custom tool (an `external` HTTP tool, `custom` code, or a
+flow exposed as a tool), design it with the `tool-design` skill family before
+`create_tool`: it covers the model-facing description and schema, result shape, error
+classes, idempotency, secrets, and the save-time validator codes. If that skill is not
+installed, the same checklist is public at
+`https://github.com/runtypelabs/skills/tree/main/skills/tool-design`.
+
 For commerce products, check UCP support when a merchant domain is known, summarize the
 finding, and ask whether to use UCP or the traditional commerce path before proceeding.
 

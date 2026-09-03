@@ -120,14 +120,23 @@ Both still need the timeout and idempotency decisions above.
 
 ## On Runtype
 
-- A runtime tool call is capped at 30 seconds; a `config.timeout` above that is
-  rejected at validation. Work that needs longer goes into a flow step (5-minute step
-  budget by default) or a subagent, and the tool that triggers it returns the execution
-  id for `get_execution_status`.
-- Flows are the platform's tool chain with checkpoints: a `conditional` step and
-  `errorHandling` on each step express compensation paths, and `paginate-api` fails
-  rather than swallows when unset, so partial completions surface.
-- Records give command tools a natural idempotency key: upsert by a stable external id
-  instead of inserting on every call.
-- Read `get_platform_documentation(topic="limits")` for the current step, flow, and
-  tool budgets before choosing sync or async.
+- **Budgets.** A runtime tool call is capped at 30 s; `config.timeout` above 30000 ms
+  is rejected at validation. A flow step gets 5 min by default, a flow 15 min, and an
+  `execute-agent` step only 30 s unless its own `config.timeout` is raised (nested
+  inside the step budget, so raise `options.stepTimeoutMs` on dispatch too). Read
+  `get_platform_documentation(topic="limits")` before choosing sync or async.
+- **Async job shape.** Inside an agent, the async tool is a `subagent` tool with
+  `config.execution.mode: "detached"`: the call returns a `subagent_run` handle
+  (`runId`, `status`) and `notify: "narrate"` reports progress back into the loop.
+  From outside, start a detached flow with `run_flow` (`async: true`) or `dispatch`
+  (`async: true`, `Prefer: respond-async` over REST) and poll `get_execution_status`
+  with the returned execution id. A `flow` tool is neither: the agent awaits the nested
+  flow and gets its reduced result, so it must finish inside the tool's budget.
+- **Idempotency.** Records give command tools a natural key: `upsert-record` by a
+  stable external id instead of `create-record` on every call.
+- **Compensation and boundaries in flows.** Per-step `errorHandling` (`"fail"` aborts,
+  `"continue"` substitutes `defaultValue`, unset follows the step kind's default) plus
+  `conditional` branches express the undo path; there is no cross-step transaction, so
+  order steps so the irreversible one runs last.
+- **Timeout errors** from a tool surface to the model as the tool's error; include the
+  async alternative in the tool description so the agent knows where to go.

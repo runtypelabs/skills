@@ -164,9 +164,25 @@ transformation step in the agent's head.
 
 ## On Runtype
 
-- Runtime tool results feed the model directly; the same shaping rules apply to
-  `external` tools (map fields in the response rather than passing the upstream body),
-  `custom` code tools, and MCP tools surfaced through `discover_mcp_server_tools`.
-- Flow steps that transform a tool's output (`transform-data`) are a good place to
-  shape a third-party payload once instead of in every prompt.
-- Large artifacts belong in records or artifacts, referenced by id, not in the message.
+- Runtime tool results feed the model directly. An `external` tool returns the
+  upstream body unchanged (its `body` template maps the request, not the response), so
+  shape a noisy payload in a `flow` tool whose `api-call` step feeds a `transform-data`
+  step, or in a downstream `transform-data` step. A `custom` code tool has no network
+  egress: it shapes only what arrives in its parameters. The same rules apply to MCP
+  tools surfaced through `discover_mcp_server_tools`.
+- A `transform-data` step is the place to shape a third-party payload once instead of
+  in every prompt; `paginate-api` is the platform's cursor-pagination step for
+  upstream lists.
+- **Empty is not the same as failed.** A fetch-class step (`fetch-url`, `api-call`,
+  `crawl`, `search`) with `errorHandling` unset swallows a failure into
+  `defaultValue` (or an empty result) and reports success, so a downstream
+  `transform-data` or `upsert-record` runs over zero rows as if the API returned
+  nothing. `validate_flow` warns with `FETCH_CLASS_SWALLOWING_FEED`; set
+  `errorHandling: "fail"` when an empty result must not look like a real one.
+- `upsert-record` needs a JSON object as its source (`responseFormat: "json"` on the
+  producing prompt step, or a transform output); a string source is rejected as
+  `UPSERT_RECORD_SOURCE_NOT_JSON`. Shape the result before it reaches a record.
+- Large artifacts belong in records or artifacts, referenced by id, not in the message;
+  `get_record` is the resolver for that reference.
+- Persona renders the first assistant text block prominently, so a tool whose result
+  is meant for display should return the final shape, not a preamble.
