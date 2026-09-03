@@ -5,9 +5,11 @@ description: >-
   asks what Runtype can build, needs MCP/CLI/dashboard setup, or wants to scope an AI
   product on Runtype. Route hands-on product builds to runtype-build-product, live account
   ops to runtype-admin, Persona widgets to runtype-persona, FPO packaging to
-  runtype-templates, and SDK/CLI/Marathon work to runtype-sdk-marathon. Do not use for
-  generic LLM chat, unrelated AI frameworks, or non-AI infrastructure unless Runtype is
-  explicitly part of the request.
+  runtype-templates, SDK/CLI/Marathon work to runtype-sdk-marathon, and agents that run
+  outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangChain, custom loops;
+  OpenTelemetry traces, flue-otel, eval capture from external runs) to
+  runtype-external-agents. Do not use for generic LLM chat or non-AI infrastructure
+  unless Runtype is explicitly part of the request.
 user-invocable: true
 argument-hint: '[Runtype goal or setup question]'
 ---
@@ -51,13 +53,15 @@ only after confirming that constraint with the user. The full public setup scrip
 
 Use this routing table instead of loading every Runtype detail into context:
 
-| User intent                                                                                                                               | Use                     |
-| ----------------------------------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| Build, deploy, or validate a product with agents, flows, tools, surfaces, records, secrets, schedules, or evals                           | `runtype-build-product` |
-| Inspect or modify a live account, debug failures, read logs/traces, compare evals, manage resources                                       | `runtype-admin`         |
-| Embed or theme a Persona chat widget, build fullscreen assistant layouts, use client tokens, or configure WebMCP/browser-side local tools | `runtype-persona`       |
-| Package a product as a distributable FPO template, handle pending secrets, validate import readiness                                      | `runtype-templates`     |
-| Use the TypeScript/Python SDK, CLI, Marathon, playbooks, sandboxes, or code-first stored/upsert/virtual workflows                         | `runtype-sdk-marathon`  |
+| User intent                                                                                                                                                                                        | Use                       |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Build, deploy, or validate a product with agents, flows, tools, surfaces, records, secrets, schedules, or evals                                                                                    | `runtype-build-product`   |
+| Inspect or modify a live account, debug failures, read logs/traces, compare evals, manage resources                                                                                                | `runtype-admin`           |
+| Embed or theme a Persona chat widget, build fullscreen assistant layouts, use client tokens, or configure WebMCP/browser-side local tools                                                          | `runtype-persona`         |
+| Package a product as a distributable FPO template, handle pending secrets, validate import readiness                                                                                               | `runtype-templates`       |
+| Use the TypeScript/Python SDK, CLI, Marathon, playbooks, sandboxes, or code-first stored/upsert/virtual workflows                                                                                  | `runtype-sdk-marathon`    |
+| Connect an agent that runs outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangChain, custom): send its traces to Runtype, let Runtype call it, capture and improve it from real runs | `runtype-external-agents` |
+| Design or review the tools an agent calls (names, schemas, results, errors, idempotency, secrets, bundling), on Runtype or any MCP or function-calling runtime                                     | `tool-design`             |
 
 ## Mental Model
 
