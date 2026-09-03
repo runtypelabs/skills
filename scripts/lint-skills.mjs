@@ -520,12 +520,21 @@ function checkActivationSmoke(files) {
     }
   }
 
-  const descriptions = files
-    .map((skill) => parseFrontmatter(read(skill.file), skill.file, { report: false }).description ?? '')
-    .join('\n')
-    .toLowerCase()
-  if (descriptions.includes('vercel ai sdk')) {
-    failures.push('activation smoke: generic Vercel AI SDK should not trigger Runtype skills')
+  // Vercel AI SDK is an intentional trigger for exactly two skills: the router
+  // (which hands it off) and runtype-external-agents (which owns it). Every
+  // other skill must stay quiet for a generic Vercel AI SDK prompt.
+  const vercelAllowed = new Set(['runtype', 'runtype-external-agents'])
+  for (const skill of files) {
+    const description = (
+      parseFrontmatter(read(skill.file), skill.file, { report: false }).description ?? ''
+    ).toLowerCase()
+    const mentionsVercel = description.includes('vercel ai sdk')
+    if (mentionsVercel && !vercelAllowed.has(skill.name)) {
+      failures.push(`activation smoke: ${skill.name} must not trigger on generic Vercel AI SDK`)
+    }
+    if (skill.name === 'runtype-external-agents' && !mentionsVercel) {
+      failures.push('activation smoke: runtype-external-agents must mention Vercel AI SDK')
+    }
   }
 }
 
