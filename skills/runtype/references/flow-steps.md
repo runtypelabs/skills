@@ -247,7 +247,7 @@ Useful for waiting on external state (e.g., a webhook to fire, a record to updat
 
 **Variables and templating.** Most config fields that accept text support template syntax: `{{variable.path}}`. This works in `prompt`, `template`, `api-call`, `send-email`, etc. Inside `transform-data`, access the same data via JS: `input.variable.path`.
 
-**Secrets in config.** Use `{{secret:KEY}}` (singular `secret`, colon, UPPER_CASE) inside tool config when a step needs a secret. Don't inline values. `{{secrets:KEY}}` (plural) is invalid; `{{secrets.key}}` (plural with dot) is RETIRED, not a managed secret: a non-empty dispatch `secrets` map is refused on agent dispatches with 400 `RUNTIME_AGENT_TRANSIENT_SECRETS_UNSUPPORTED` and ignored on flow dispatches. Never emit it; `{{secret:KEY}}` is the only credential contract.
+**Secrets in config.** Use `{{secret:KEY}}` (singular `secret`, colon, UPPER_CASE) inside tool config when a step needs a secret. Don't inline values. `{{secrets:KEY}}` (plural) is invalid; `{{secrets.key}}` (plural with dot) is RETIRED, not a managed secret: a non-empty dispatch `secrets` map is refused with 400 `RUNTIME_AGENT_TRANSIENT_SECRETS_UNSUPPORTED` on agent dispatches and 400 `RUNTIME_FLOW_TRANSIENT_SECRETS_UNSUPPORTED` on flow dispatches. Never emit it; `{{secret:KEY}}` is the only credential contract.
 
 **Step ordering.** Steps run in declaration order. There's no native parallelism primitive — if you need parallel API calls, do them in a single `transform-data` step with `Promise.all`.
 
