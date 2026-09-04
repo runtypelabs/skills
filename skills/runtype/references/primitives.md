@@ -296,7 +296,7 @@ Reference syntax — same everywhere (tool configs, FPO templates, runtime): `{{
 Two adjacent syntaxes that look similar but are different:
 
 - `{{secrets:KEY}}` — **plural with colon is invalid**. The resolver rejects it.
-- `{{secrets.key}}` — plural with **dot** is RETIRED, not a managed secret: a non-empty dispatch `secrets` map is refused on agent dispatches with 400 `RUNTIME_AGENT_TRANSIENT_SECRETS_UNSUPPORTED` and ignored on flow dispatches. Never emit it; `{{secret:KEY}}` is the only credential contract.
+- `{{secrets.key}}` — plural with **dot** is RETIRED, not a managed secret: a non-empty dispatch `secrets` map is refused with 400 `RUNTIME_AGENT_TRANSIENT_SECRETS_UNSUPPORTED` on agent dispatches and 400 `RUNTIME_FLOW_TRANSIENT_SECRETS_UNSUPPORTED` on flow dispatches. Never emit it; `{{secret:KEY}}` is the only credential contract.
 
 **Always redacted in logs at every level.** If a value matches a known secret, it's stripped from log output across the platform.
 
