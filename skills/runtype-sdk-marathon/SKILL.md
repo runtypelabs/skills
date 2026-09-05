@@ -27,11 +27,12 @@ Code-first modes:
 
 - Stored: create persistent agents/flows in Runtype.
 - Upsert on execute: code is the source of truth and overwrites the Runtype copy when run.
-- Virtual: definition is sent over the wire and not persisted.
+- Virtual: the definition is supplied per execution without creating a saved agent/flow.
+  Execution logs, traces, and retention policies still apply; this is not a zero-retention mode.
 
 Default to stored or upsert for production workflows because dashboard inspection, logs,
-evals, and versioning are easier. Use virtual for tests, one-offs, privacy constraints,
-or temporary generated flows.
+evals, and versioning are easier. Use virtual for tests, one-offs, or temporary generated flows; verify retention separately
+for privacy-sensitive workloads.
 
 Use local tools when execution must happen in the user's browser or server. Use hidden
 parameters when auth context, tenant ids, or sensitive request data must not appear in the
@@ -46,18 +47,20 @@ npm install -g @runtypelabs/cli
 npx @runtypelabs/cli@latest <command>
 ```
 
-Authenticate:
+Check auth before changing it:
 
 ```bash
-runtype auth login
-runtype auth whoami
+runtype auth status
 ```
 
-Export a key for stdio MCP or CI only when needed:
-
-```bash
-export RUNTYPE_API_KEY=$(runtype auth export-key)
-```
+That checks stored login/signup state only. If `RUNTYPE_API_KEY` is configured, verify
+it with `runtype auth whoami --no-tty` instead and reuse that account. Otherwise reuse
+a stored authenticated account; for a pending signup follow its `next` command. New
+accounts use `runtype auth register --email <email>` then `runtype auth verify <code>`.
+Browser-only `runtype auth login` requires the user's interactive terminal, not a coding
+harness. For existing-account or installation recovery, follow
+`https://runtype.ai/.well-known/agent.md`. Never ask for API keys in chat; have the user
+configure credentials privately. `RUNTYPE_API_KEY` authenticates CLI commands in CI.
 
 Common commands include `runtype agents list`, `runtype dispatch`, `runtype flows create`,
 `runtype records create`, `runtype schedules`, `runtype models`, `runtype batch`,

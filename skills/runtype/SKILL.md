@@ -34,20 +34,22 @@ schema, catalog, or creation guidance:
 - `get_platform_documentation(topic=...)` for schemas, surface traits, tool catalogs,
   SDK docs, Persona embed docs, dashboard links, and type definitions.
 
-If MCP is not connected, use the CLI-to-MCP golden path instead of presenting several
-equivalent setup choices:
+If MCP is not connected, check `runtype auth status` for stored login/signup state.
+If `RUNTYPE_API_KEY` is configured, verify it with `runtype auth whoami --no-tty` instead;
+`status` ignores environment credentials. Reuse valid authentication before resuming
+a stored pending signup using its `next` command. For a new account,
+use `runtype auth register --email <email>` then `runtype auth verify <code>` — both work
+without a TTY or browser. Do not run browser-only `runtype auth login` from a coding harness.
 
-1. Authenticate the CLI with `runtype auth login` so this session can keep working.
-2. Run `runtype install-mcp`. It installs this skill, configures the current harness for
-   `https://api.runtype.com/v1/mcp/protocol`, and starts client-owned OAuth when possible.
-3. Continue the current session with CLI commands. Tell the user to restart or reload the
-   harness because a running agent may not discover a newly configured MCP connection.
-4. In the next session, use MCP first and call `get_build_instructions` before building.
+Run `runtype install-mcp` for the current harness, follow its action/restart status,
+and keep working through the CLI while MCP is unavailable (`runtype mcp tools` and
+`runtype mcp call <tool>` bridge the hosted tools). Use MCP once its tools actually appear;
+configuration alone does not prove the connection is active.
 
-Do not choose an API key merely to avoid a restart. Headless API-key setup is an exception
-for environments where browser OAuth is genuinely impossible; follow `https://runtype.com/auth.md`
-only after confirming that constraint with the user. The full public setup script is at
-`https://runtype.ai`.
+For installation or auth recovery, read the public setup script at
+`https://runtype.ai/.well-known/agent.md`; the raw auth protocol is at
+`https://runtype.com/auth.md`. Existing-account credentials must be configured privately,
+not pasted into the conversation. Only install or sign up when the user requests setup.
 
 ## Route To Focused Skills
 
