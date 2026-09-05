@@ -177,7 +177,10 @@ variation; it never widens a constrained enum or bypasses validation.
 - **Tool choice strategy.** `toolCallStrategy: "required"` on a multi-step prompt
   returns empty output, and `"none"` with tools attached silently drops them; the
   validator reports `TOOL_STRATEGY_REQUIRED_MULTISTEP` and
-  `TOOL_STRATEGY_NONE_WITH_TOOLS`.
+  `TOOL_STRATEGY_NONE_WITH_TOOLS`. Provider-native tools (Anthropic, OpenAI and
+  xAI web search) from two providers on one step route to the first-listed
+  owner and leave the other's tools inert; the validator reports
+  `PROVIDER_TOOLS_MIXED_OWNERS`.
 - Descriptions drive both model choice and the `tool_search` ranking that activates
   at 20 tools, so a vague description hides the tool twice.
 - Built-in and Orthogonal tools ship with reviewed descriptions; read them through
