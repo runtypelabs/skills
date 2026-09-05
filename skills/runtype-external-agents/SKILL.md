@@ -1,13 +1,6 @@
 ---
 name: runtype-external-agents
-description: >-
-  Use when an agent runs outside Runtype's hosted execution (Flue, the Cloudflare Agents
-  SDK, Vercel AI SDK, LangChain, or a custom loop) and the user wants Runtype's
-  observability, traces, eval capture, Persona chat, surfaces, or the trace-to-eval
-  improvement loop for it. Covers OpenTelemetry/OTLP ingest, @runtypelabs/flue-otel vs
-  @flue/opentelemetry, Flue on Cloudflare Workers, telemetry API keys, registering a
-  runtype-stream or A2A endpoint so Runtype can call the agent, and which features each
-  path unlocks. Not for agents Runtype itself executes.
+description: 'Connect externally executed agents to Runtype traces, evals, or surfaces; not Runtype-hosted execution.'
 user-invocable: true
 argument-hint: '[framework and what you want from Runtype: traces, evals, chat UI]'
 ---
