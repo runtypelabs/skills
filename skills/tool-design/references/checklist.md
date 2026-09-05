@@ -61,6 +61,7 @@ the row passes; the remaining rows are still yours to review by hand.
 | 17  | `FETCH_CLASS_SWALLOWING_FEED`         | A fetch-class step with unset `errorHandling` feeds a transform or record write, so a dead API reads as an empty result                                  |
 | 3   | `TOOL_STRATEGY_REQUIRED_MULTISTEP`    | Forced tool choice on a multi-step prompt, which returns empty output                                                                                    |
 | 3   | `TOOL_STRATEGY_NONE_WITH_TOOLS`       | Tools attached but `toolCallStrategy: "none"` forbids calling any of them                                                                                |
+| 3   | `PROVIDER_TOOLS_MIXED_OWNERS`         | Provider-native tools from two providers on one step; only the first-listed owner's tools run, the rest go inert                                         |
 | 30  | `RUNTIME_TOOLS_INVALID`               | The `runtimeTools` block fails structural validation, including a reserved name                                                                          |
 
 Enforced at runtime rather than at save time: the 30 s tool timeout (row 26), the
