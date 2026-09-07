@@ -1,13 +1,6 @@
 ---
 name: runtype-external-agents
-description: >-
-  Use when an agent runs outside Runtype's hosted execution (Flue, the Cloudflare Agents
-  SDK, Vercel AI SDK, LangChain, or a custom loop) and the user wants Runtype's
-  observability, traces, eval capture, Persona chat, surfaces, or the trace-to-eval
-  improvement loop for it. Covers OpenTelemetry/OTLP ingest, @runtypelabs/flue-otel vs
-  @flue/opentelemetry, Flue on Cloudflare Workers, telemetry API keys, registering a
-  runtype-stream or A2A endpoint so Runtype can call the agent, and which features each
-  path unlocks. Not for agents Runtype itself executes.
+description: 'Connect externally executed agents to Runtype traces, evals, or surfaces; not Runtype-hosted execution.'
 user-invocable: true
 argument-hint: '[framework and what you want from Runtype: traces, evals, chat UI]'
 ---
@@ -73,9 +66,18 @@ content on by default). Export to Runtype:
 
 To keep prompts and tool payloads out of the export, add
 `instrument(createCloudflareTracing({ content: false }))` from `@flue/runtime/cloudflare`
-at module scope in `app.ts`, and tell the user this also removes eval capture. Cloudflare
-Agents SDK and Think apps use the same destination; Think stores no payloads unless the
-agent class sets `storeMessages = true` and `storeTools = true`.
+at module scope in `app.ts`, and tell the user this also removes eval capture. Think apps
+use the same destination and store no payloads unless the agent class sets
+`storeMessages = true` and `storeTools = true`.
+
+**Cloudflare Agents SDK (`agents`): not zero-code; logical-run support is incomplete.** The app must call
+`wrapAISDK(ai, { storeMessages: true, storeTools: true })` from `agents/observability/ai`
+(content is off by default) and use the same Workers Observability destination as above.
+Local captures grouped WebSocket turns into one trace; deployed captures used distinct
+traces for turns and approval continuations. Runtype files one run per trace, so one
+request paused for approval can appear as multiple runs. Slow and cancelled deployed
+turns also emitted `span_not_ended` warnings with missing GenAI fields. Do not promise
+complete output, usage, or cancellation status from those exports. The chip is withheld.
 
 **Flue on Node / Cloud Run / anywhere else.** Point exactly ONE Flue instrumentation at
 Runtype (two would double tokens and cost):
