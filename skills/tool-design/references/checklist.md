@@ -55,6 +55,7 @@ the row passes; the remaining rows are still yours to review by hand.
 | Row | Code                                  | What fires it                                                                                                                                            |
 | --- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 1   | `RESERVED_TOOL_NAME`                  | A runtime tool's sanitized name collides with the platform's `runtype_set_state`                                                                         |
+| 4   | `TOOL_PARAM_EMBEDDED_JSON_STRING`     | A string parameter's name or description says it carries a JSON document, so the model nests JSON in a string and drops escapes; model it as an object   |
 | 5   | `OPTIONAL_PARAM_IN_TOOL_TEMPLATE`     | An optional parameter is interpolated into an `external` tool's url, header, or body with no default, so an omitted argument ships a literal placeholder |
 | 10  | `TOOL_CALL_STEP_UNKNOWN_CATALOG_TOOL` | A `tool-call` step names a catalog tool id that nothing answers to                                                                                       |
 | 11  | `UPSERT_RECORD_SOURCE_NOT_JSON`       | A string-producing step feeds `upsert-record`, which needs a JSON object                                                                                 |
