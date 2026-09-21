@@ -1,11 +1,12 @@
 # AGENTS.md
 
-This repo contains official agent skills for the [Runtype](https://runtype.com) platform, published via [skills.sh](https://skills.sh) and the Codex plugin marketplace.
+This repo contains official agent skills for the [Runtype](https://runtype.com) platform, published via [skills.sh](https://skills.sh), the Claude Code plugin marketplace, and the Codex plugin marketplace.
 
 ## Repo Structure
 
 ```
-.Codex-plugin/plugin.json    # Codex plugin manifest
+.claude-plugin/plugin.json     # Claude Code plugin manifest
+.codex-plugin/plugin.json      # Codex plugin manifest
 skills/<name>/SKILL.md         # One directory per skill
 skills/<name>/references/      # Optional: API specs, schemas, long docs
 skills/<name>/scripts/         # Optional: executable helpers
@@ -74,10 +75,11 @@ Use `${CLAUDE_SKILL_DIR}` to reference files relative to the skill directory.
 
 ## Testing a Skill Locally
 
-Symlink or copy the skill into a project's `.Codex/skills/` to test before pushing:
+Symlink or copy the skill into a project's agent skills directory (`.claude/skills/` for Claude Code, `.codex/skills/` for Codex) to test before pushing:
 
 ```bash
-ln -s $(pwd)/skills/my-skill /path/to/project/.Codex/skills/my-skill
+ln -s $(pwd)/skills/my-skill /path/to/project/.claude/skills/my-skill
+ln -s $(pwd)/skills/my-skill /path/to/project/.codex/skills/my-skill
 ```
 
-Then open Codex in that project and invoke `/my-skill`.
+Then open your coding agent in that project and invoke `/my-skill`.
