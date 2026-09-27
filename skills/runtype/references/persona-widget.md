@@ -60,6 +60,8 @@ widget code underneath your shipped bundle.
 
 Persona uses a `clientToken`, created with `create_client_token`, for browser-side chat access. This is not a surface key. Client tokens are public, scoped to specific agents or flows, and can be constrained with origin and rate-limit settings.
 
+A chat surface is optional: a token that names the agent in `agentIds` works on its own. Pair it with `data-agent-id="agent_..."` on the script tag or `config.agentId` in `initAgentWidget`. For config-as-code, `Runtype.clientTokens.ensure({ name, agentIds, allowedOrigins })` from `@runtypelabs/sdk` finds the token by name, creates or converges it, and returns its value.
+
 ## Current defaults to preserve
 
 - Script-tag installs use the tiny `launcher.global.js` fast path for ordinary floating launchers and defer the full widget until first open when safe.
