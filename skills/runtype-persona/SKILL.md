@@ -76,8 +76,11 @@ Common wrong answers: `@runtype/persona`, `Persona.mount()`, `window.Persona`,
 
 ## Build Pattern
 
-1. Create or identify the product, agent/flow capability, and `chat` surface.
-2. Create a scoped client token with `create_client_token`.
+1. Create or identify the agent or flow. A product and `chat` surface are optional:
+   a token that names the agent in `agentIds` works without them.
+2. Create a scoped client token with `create_client_token` (or
+   `Runtype.clientTokens.ensure` in code). Without a surface, pass `agentId` to the
+   widget (`data-agent-id` or `config.agentId`).
 3. Generate embed code with `generate_persona_embed_code`.
 4. For consumer-facing widgets, hide tool calls and reasoning by default.
 5. For internal/debug widgets, expose useful traces intentionally.
