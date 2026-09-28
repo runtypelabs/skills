@@ -168,8 +168,9 @@ For error shapes, retry classification, and step failure defaults, see
 - Runtime tool results go to the model directly. An `external` tool returns the
   upstream body unchanged (its `body` template maps the request, not the response), so
   shape a noisy payload in a `flow` tool whose `api-call` step feeds a `transform-data`
-  step. A `custom` code tool on the default Cloudflare Worker environment has no
-  network access, so it can shape only what arrives in its parameters.
+  step. A `custom` code tool has no network egress unless it opts in with
+  `networkAccess` (an `allowedHostnames` list is the safe form); without it, the tool can
+  shape only what arrives in its parameters.
 - A `flow` tool returns the value that the flow's final executed step wrote. Set
   `outputVariable` to return one named flow variable instead, such as the
   `transform-data` output, and `outputMapping` to select a dot path inside it. A
