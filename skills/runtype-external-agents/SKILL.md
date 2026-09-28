@@ -1,6 +1,6 @@
 ---
 name: runtype-external-agents
-description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
+description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
 user-invocable: true
 argument-hint: '[framework and what you want from Runtype: traces, evals, chat UI]'
 ---
@@ -37,6 +37,10 @@ Capability matrix to state plainly:
   content on the spans (`gen_ai.input.messages` / `gen_ai.output.messages`, or a supported
   framework's own attributes). `@runtypelabs/flue-otel` 0.5 and later sends it by default
   (`content: false` turns it off). Version 0.4 and earlier never did.
+- OpenClaw and Hermes send no conversation content by default. Set
+  `RUNTYPE_CAPTURE_CONTENT=true` for OpenClaw or
+  `RUNTYPE_OTEL_CAPTURE_CONTENT=true` for Hermes. If the plugin receives no
+  content, the run has no transcript to capture as an eval case.
 - Eval **re-run** (`run_eval_suite`) needs Runtype to be able to call the agent. An
   `external` agent over A2A works (recorded-tool replay cases are skipped).
   `runtype-stream` endpoints are not eval targets. Telemetry-only runs cannot be re-run.
@@ -85,6 +89,47 @@ the same destination. They store no payloads unless the agent class sets
 **Cloudflare Agents SDK (`agents`).** Runtype has no dedicated adapter for it. Use the
 generic OpenTelemetry setup under **Any other OpenTelemetry-instrumented agent**.
 
+**OpenClaw native plugin.** The plugin sends OTLP itself. Do not add a separate
+OpenTelemetry SDK. Review the package and its requested capabilities before
+granting conversation access. Install it with
+`openclaw plugins install @runtypelabs/openclaw-adapter`.
+
+Set `RUNTYPE_AGENT_ID` and a `TELEMETRY:WRITE` key in `RUNTYPE_API_KEY` on the
+Gateway process. `RUNTYPE_OTLP_URL` changes the full OTLP trace URL from its
+`https://api.runtype.com/v1/otel/v1/traces` default. Use only a trusted
+receiver because it receives the telemetry key. Run
+`openclaw plugins enable runtype` and
+`openclaw config set plugins.entries.runtype.hooks.allowConversationAccess true --strict-json`,
+then restart the Gateway. JSON inspection can expose environment values. Run
+`openclaw plugins inspect runtype --runtime` without `--json`.
+
+The `chat` span represents an OpenClaw attempt, not each provider call. The plugin
+waits up to one second for pending `llm_output` after `agent_end`, but it has no
+durable retry queue. Content is off by default. With `RUNTYPE_CAPTURE_CONTENT=true`, the
+plugin sends bounded, redacted messages and tool payloads only when OpenClaw
+supplies them. It omits a content value over 32 KiB after redaction, but the
+redactor cannot identify every secret. A run without a transcript cannot
+become an eval case. This plugin does not make OpenClaw callable from Runtype.
+
+**Hermes native plugin.** The Hermes observer plugin sends OTLP itself. Do not add
+a separate OpenTelemetry SDK. Install and enable it with
+`hermes plugins install runtypelabs/hermes-runtype-otel --enable`. Set `RUNTYPE_AGENT_ID`
+and a `TELEMETRY:WRITE` key in `RUNTYPE_OTEL_API_KEY` on the Hermes process.
+`RUNTYPE_OTEL_ENDPOINT` changes the full OTLP trace URL from its
+`https://api.runtype.com/v1/otel/v1/traces` default. Use only a trusted
+receiver because it receives the telemetry key. Restart a running gateway with
+`hermes gateway restart`. For a CLI test, run
+`hermes chat --oneshot -q "Reply with one sentence"`.
+
+Content is off by default. `RUNTYPE_OTEL_CAPTURE_CONTENT=true` sends bounded,
+redacted messages and tool payloads for transcripts and eval capture. The plugin
+limits message text and tool results to 4,096 characters and model input to the
+last 16 messages. It omits tool arguments whose redacted JSON exceeds 4,096
+characters. The filter cannot identify every secret. This plugin does not make
+Hermes callable from Runtype. Hermes can return a provider error before it emits
+`on_session_end`; `api_request_error` may recover, so a long-running gateway
+cannot immediately export that failed turn as terminal.
+
 **Flue on Node, Cloud Run, or another host.** Point exactly one Flue instrumentation at
 Runtype. Two would double the tokens and cost.
 
@@ -104,10 +149,11 @@ Call `provider.register()`, or every span becomes its own trace. Attribute runs 
 `await provider.forceFlush()` before a serverless handler returns. The app also installs
 `@flue/runtime` itself, which needs Node 22.19 or later.
 
-**A supported framework.** Each framework needs an OpenTelemetry provider and exporter
-behind its instrumentation. Instrumentation alone emits spans that nothing sends, and the
-run never appears. Runtype reads each framework's own attributes, so no `gen_ai.*` code is
-needed. Set the exporter with the env vars below, except for Mastra.
+**Frameworks with OpenTelemetry instrumentation.** Each framework in this table
+needs an OpenTelemetry provider and exporter behind its instrumentation.
+Instrumentation alone emits spans that nothing sends, and the run never appears.
+Runtype reads each framework's own attributes, so no `gen_ai.*` code is needed.
+Set the exporter with the env vars below, except for Mastra.
 
 | Framework         | Install                                                                                                      | Enable                                                                                                                                                                                                     |
 | ----------------- | ------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
