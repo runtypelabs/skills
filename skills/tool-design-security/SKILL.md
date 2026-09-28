@@ -138,6 +138,13 @@ Violations return a clear, logged error.
   browser, or to prove who the user is, send `identityProof` instead, and set
   `config.tenancyStrategy` on the saved agent to require that identity. Use `.id`, not
   `.projectedId`.
+- **Principal your API can verify.** When your API must check the identity itself, put
+  `Authorization: Bearer {{_identity.token}}` on an `external` tool (or an inline MCP
+  server header). Runtype signs a five-minute ES256 JWT per call with `aud` = the tool's
+  fixed host and `iss` = `https://api.runtype.com/orgs/<organizationId>`; the model never
+  sees it. It is minted only for an agent with `tenancyStrategy` and a resolved identity.
+  The receiver must verify against `https://api.runtype.com/.well-known/jwks.json` and pin
+  `iss` to its own customer's org, because every org shares the signing key.
 - **Secrets.** `{{secret:KEY}}` references resolve from the managed secret store at
   execution and are the only credential contract. They resolve in `external` tool
   `url`, `headers`, `body`, and auth; in the HTTP flow steps (`fetch-url`, `api-call`,
