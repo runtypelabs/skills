@@ -144,20 +144,22 @@ carries each one.
 
 ### Which tool kind carries which pattern
 
-| Tool kind (`toolType`) | What it is                                                                            | Patterns it carries                                                                                  |
-| ---------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `external`             | HTTP call defined by `url`, `method`, `headers`, `body` template                      | Tool Adapter, Secret Injection (`{{secret:KEY}}`), request mapping (the `body` template)             |
-| `custom`               | Sandboxed code (JavaScript by default; TypeScript or Python in a sandbox environment) | Parameter Coercion, Response Shaper, Error Classification, Natural Identifier resolution             |
-| `flow`                 | A saved flow exposed as one tool, run synchronously                                   | Task Bundle, Tool Chain, Compensation (per-step `errorHandling`), Response Shaper (`outputVariable`) |
-| `subagent`             | Delegation to a saved or inline agent (`agentId` or `agent`)                          | Abstraction Ladder (the orchestrated rung), Scatter-Gather, Async Job (detached mode)                |
-| `local`                | Executed by the client (browser widget or SDK caller)                                 | Confirmation Request, anything needing the user's environment                                        |
-| `mcp`                  | A tool discovered from an MCP server                                                  | Tool Gateway, Tool Registry (`discover_mcp_server_tools`)                                            |
-| `builtin` / Orthogonal | Platform catalog tools (attached by id, not created)                                  | Canonical Tool Model, house style for descriptions                                                   |
+| Tool kind (`toolType`) | What it is                                                                            | Patterns it carries                                                                                                                      |
+| ---------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `external`             | HTTP call defined by `url`, `method`, `headers`, `body` template                      | Tool Adapter, Secret Injection (`{{secret:KEY}}`), request mapping (the `body` template)                                                 |
+| `custom`               | Sandboxed code (JavaScript by default; TypeScript or Python in a sandbox environment) | Parameter Coercion, Response Shaper, Error Classification, Natural Identifier resolution; Tool Adapter when it opts into `networkAccess` |
+| `flow`                 | A saved flow exposed as one tool, run synchronously                                   | Task Bundle, Tool Chain, Compensation (per-step `errorHandling`), Response Shaper (`outputVariable`)                                     |
+| `subagent`             | Delegation to a saved or inline agent (`agentId` or `agent`)                          | Abstraction Ladder (the orchestrated rung), Scatter-Gather, Async Job (detached mode)                                                    |
+| `local`                | Executed by the client (browser widget or SDK caller)                                 | Confirmation Request, anything needing the user's environment                                                                            |
+| `mcp`                  | A tool discovered from an MCP server                                                  | Tool Gateway, Tool Registry (`discover_mcp_server_tools`)                                                                                |
+| `builtin` / Orthogonal | Platform catalog tools (attached by id, not created)                                  | Canonical Tool Model, house style for descriptions                                                                                       |
 
 An `external` tool returns the upstream response as-is; shape it in a `flow` tool
-(`api-call` step into `transform-data`) or in a downstream `transform-data` step. The
-default custom-tool environments have no network access, so a `custom` tool cannot make
-the call itself. A `flow` tool returns the flow's terminal step output; set
+(`api-call` step into `transform-data`) or in a downstream `transform-data` step. A
+`custom` tool can make the call itself only when it opts in: set `networkAccess` to an
+`allowedHostnames` list, and declare any managed secret in `secrets` so the code sends a
+phantom token that the egress proxy swaps for the real credential. Without
+`networkAccess`, a `custom` tool has no network egress. A `flow` tool returns the flow's terminal step output; set
 `config.outputVariable` to return one shaped variable instead. Long-running work is not
 a `flow` tool either: a `subagent` tool with `config.execution.mode: "detached"` returns
 a run handle, and `run_flow` with `async: true` returns an execution id (see

@@ -179,8 +179,9 @@ whether partial results are attached, and whether an async variant exists. See
   `transform-data` step that gives success and failure one result shape. If the step
   has a `responseMapping`, the mapping also applies to `defaultValue`, so map the error
   fields too. The step cannot read the upstream status, so the fallback object carries
-  one fixed class. A `custom` tool in the default execution environment has no network
-  access and cannot make the call itself.
+  one fixed class. A `custom` tool has no network egress unless it opts in with
+  `networkAccess` (and `secrets` for credentials); then it can make the call and shape
+  the failure class itself.
 - **For an MCP server tool, put the class and recovery steps in the content text.**
   Runtype passes the `content` of a `tools/call` result to the model and does not read
   `isError`, so a result with `isError: true` is recorded as a successful call. A
