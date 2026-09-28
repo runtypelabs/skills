@@ -339,6 +339,7 @@ Bring-your-own provider credentials: `list_provider_keys`, `create_provider_key`
 | `get_build_instructions`     | Detailed instructions for building on Runtype    |
 | `get_platform_documentation` | Schemas, type definitions, docs                  |
 | `search_documentation`       | Natural-language answer from the docs, cited     |
+| `submit_feedback`            | Report a Runtype bug or doc gap (free)           |
 | `generate_proposal`          | Scope-of-work proposal tool for a client project |
 | `generate-proposal`          | MCP prompt variant of the proposal workflow      |
 
