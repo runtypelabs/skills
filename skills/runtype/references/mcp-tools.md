@@ -1,4 +1,4 @@
-# Runtype MCP Tool Catalog
+# Runtype MCP tool catalog
 
 The Runtype MCP server at `https://api.runtype.com/v1/mcp/protocol` exposes the platform's agent-facing tools. This file groups them by purpose so you can find the right one fast.
 
@@ -42,22 +42,22 @@ that bounded form while browsing, then use the matching `get_*` tool for one res
 Pass `view: "full"` only when complete strings are required across the page.
 `list_agents` accepts `agent_type` (`runtype`, `external`, or `claude_managed`).
 
-| Tool                                                | Use for                                       |
-| --------------------------------------------------- | --------------------------------------------- |
-| `get_me`                                            | Confirm auth context — user id, org id, email |
-| `list_products`                                     | All products in the workspace                 |
-| `list_flows`                                        | All flows                                     |
-| `list_agents`                                       | All agents                                    |
-| `list_tools`                                        | All tools                                     |
-| `list_surfaces`                                     | Surfaces for a given product                  |
-| `list_records`                                      | Records (filterable by type)                  |
-| `list_collections`                                  | Registered record types and schemas           |
-| `list_skills`                                       | Agent skills (see [Skills](#skills))          |
-| `list_schedules`                                    | All schedules                                 |
-| `list_secrets`                                      | All secrets (metadata only)                   |
-| `list_conversations`                                | All conversations                             |
-| `list_available_models`                             | What models are available platform-wide       |
-| `list_model_configs` / `list_model_configs_grouped` | Models configured for this workspace          |
+| Tool                                                | Use for                                      |
+| --------------------------------------------------- | -------------------------------------------- |
+| `get_me`                                            | Confirm auth context: user id, org id, email |
+| `list_products`                                     | All products in the workspace                |
+| `list_flows`                                        | All flows                                    |
+| `list_agents`                                       | All agents                                   |
+| `list_tools`                                        | All tools                                    |
+| `list_surfaces`                                     | Surfaces for a given product                 |
+| `list_records`                                      | Records (filterable by type)                 |
+| `list_collections`                                  | Registered record types and schemas          |
+| `list_skills`                                       | Agent skills (see [Skills](#skills))         |
+| `list_schedules`                                    | All schedules                                |
+| `list_secrets`                                      | All secrets (metadata only)                  |
+| `list_conversations`                                | All conversations                            |
+| `list_available_models`                             | What models are available platform-wide      |
+| `list_model_configs` / `list_model_configs_grouped` | Models configured for this workspace         |
 
 ## Validation (use before create)
 
@@ -112,7 +112,7 @@ Schema feedback here is far more useful than waiting for create errors.
 | `get_agent`                   | Agent config                                    |
 | `update_agent`                | Partial update; a tool list replaces the set    |
 | `delete_agent`                | Remove                                          |
-| `list_agent_executions`       | Per-agent execution history                     |
+| `list_agent_executions`       | Deprecated: use `list_runs` with `agentId`      |
 | `execute_agent`               | Send a message to an agent and capture response |
 | `export_agent_runtime`        | Self-contained definition for SDK execution     |
 | `list_agent_versions`         | Agent version list                              |
@@ -130,32 +130,32 @@ Run a specific release with `execute_agent` and `alias` or `version_id`; without
 
 ## Products, surfaces, capabilities
 
-| Tool                                        | Use                                                                                                  |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `create_product`                            | New product                                                                                          |
-| `get_product`                               | Product details                                                                                      |
-| `update_product`                            | Modify                                                                                               |
-| `delete_product`                            | Remove                                                                                               |
-| `get_product_configuration`                 | Secret config status + dashboard URL                                                                 |
-| `add_product_capability`                    | Attach a flow or agent as a capability                                                               |
-| `remove_product_capability`                 | Detach                                                                                               |
-| `create_surface`                            | New surface on a product                                                                             |
-| `get_surface`                               | Surface details                                                                                      |
-| `update_surface`                            | Modify                                                                                               |
-| `delete_surface`                            | Remove                                                                                               |
-| `add_surface_item`                          | Wire a capability into a surface                                                                     |
-| `remove_surface_item`                       | Unwire                                                                                               |
-| `create_surface_key` / `delete_surface_key` | Surface API keys                                                                                     |
-| `get_slack_app_manifest`                    | Slack app manifest + connect handoff — the from-zero Slack entry point (see the `slack-setup` topic) |
-| `install_slack_integration`                 | Slack install for a caller who already holds a bot token and signing secret (migration or rotation)  |
-| `get_slack_app_status`                      | Slack app connection state                                                                           |
-| `create_integration`                        | Reserve a pending Slack integration                                                                  |
-| `get_product_setup`                         | Remaining setup steps (secrets, OAuth, installs) before a product is live                            |
-| `get_surface_setup`                         | Whether one surface is live, and its remaining install steps                                         |
-| `test_surface`                              | Send a mock inbound message through a surface and capture what would be delivered                    |
-| `get_surface_channel_context`               | Recent channel messages and reply decisions for a Slack, Telegram, or iMessage group surface         |
-| `list_example_templates`                    | First-party example templates                                                                        |
-| `create_product_from_example`               | Create a product from an example slug or a template/quick-start URL                                  |
+| Tool                                        | Use                                                                                                 |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `create_product`                            | New product                                                                                         |
+| `get_product`                               | Product details                                                                                     |
+| `update_product`                            | Modify                                                                                              |
+| `delete_product`                            | Remove                                                                                              |
+| `get_product_configuration`                 | Secret config status + dashboard URL                                                                |
+| `add_product_capability`                    | Attach a flow or agent as a capability                                                              |
+| `remove_product_capability`                 | Detach                                                                                              |
+| `create_surface`                            | New surface on a product                                                                            |
+| `get_surface`                               | Surface details                                                                                     |
+| `update_surface`                            | Modify                                                                                              |
+| `delete_surface`                            | Remove                                                                                              |
+| `add_surface_item`                          | Wire a capability into a surface                                                                    |
+| `remove_surface_item`                       | Unwire                                                                                              |
+| `create_surface_key` / `delete_surface_key` | Surface API keys                                                                                    |
+| `get_slack_app_manifest`                    | Slack app manifest + connect handoff; the from-zero Slack entry point (see the `slack-setup` topic) |
+| `install_slack_integration`                 | Slack install for a caller who already holds a bot token and signing secret (migration or rotation) |
+| `get_slack_app_status`                      | Slack app connection state                                                                          |
+| `create_integration`                        | Reserve a pending Slack integration                                                                 |
+| `get_product_setup`                         | Remaining setup steps (secrets, OAuth, installs) before a product is live                           |
+| `get_surface_setup`                         | Whether one surface is live, and its remaining install steps                                        |
+| `test_surface`                              | Send a mock inbound message through a surface and capture what would be delivered                   |
+| `get_surface_channel_context`               | Recent channel messages and reply decisions for a Slack, Telegram, or iMessage group surface        |
+| `list_example_templates`                    | First-party example templates                                                                       |
+| `create_product_from_example`               | Create a product from an example slug or a template/quick-start URL                                 |
 
 ## Records
 
@@ -312,16 +312,16 @@ Bring-your-own provider credentials: `list_provider_keys`, `create_provider_key`
 
 ## Persona widget tokens
 
-| Tool                          | Use                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------ |
-| `create_client_token`         | New token for browser-side Persona widget                                      |
-| `get_client_token`            | Details                                                                        |
-| `list_client_tokens`          | All tokens                                                                     |
-| `update_client_token`         | Change name, scope, origins, or limits                                         |
-| `delete_client_token`         | Remove                                                                         |
-| `regenerate_client_token`     | Invalidate old, issue new                                                      |
-| `generate_persona_embed_code` | **Generate ready-to-use embed code** — prefer this over hand-writing the embed |
-| `get_persona_theme_reference` | Design tokens, default palette, examples — call before generating themes       |
+| Tool                          | Use                                                                           |
+| ----------------------------- | ----------------------------------------------------------------------------- |
+| `create_client_token`         | New token for browser-side Persona widget                                     |
+| `get_client_token`            | Details                                                                       |
+| `list_client_tokens`          | All tokens                                                                    |
+| `update_client_token`         | Change name, scope, origins, or limits                                        |
+| `delete_client_token`         | Remove                                                                        |
+| `regenerate_client_token`     | Invalidate old, issue new                                                     |
+| `generate_persona_embed_code` | **Generate ready-to-use embed code**; prefer this over hand-writing the embed |
+| `get_persona_theme_reference` | Design tokens, default palette, examples; call before generating themes       |
 
 ## Sandboxes
 
@@ -363,7 +363,7 @@ Useful MCP resources include `runtype://catalog/platform`, `runtype://catalog/su
 > "I want to compare two prompts" → `submit_eval` + `compare_eval`
 > "I want this fix to stay fixed" → `add_eval_case_from_execution` into a suite, then `run_eval_suite` after each change
 > "I want to ship an agent change safely" → `activate_agent_alias` on a preview, `run_eval_suite` with `agent_alias`, then move `live` (callers that select `live` follow it)
-> "Something failed — what happened?" → `trace_execution` → if not enough, `list_logs` with the execution id
+> "Something failed. What happened?" → `trace_execution` → if not enough, `list_logs` with the execution id
 > "How much did this cost?" → `get_batch_cost` / `get_record_costs`
 > "I need to embed a chat widget" → `generate_persona_embed_code` → look at `persona-widget.md` for theming
 > "What can I build?" → `get_build_instructions` then `get_platform_documentation`
