@@ -183,8 +183,10 @@ attach them by id through `config.tools.toolIds`. Iterate with `update_tool` and
   `trace_execution`.
 - Timeouts: a custom or external tool call is capped at 30 s; longer work moves to a
   flow step (5 min default step budget) or a subagent.
-- Tool count: 50 runtime tools per request, and every configured tool is sent on every
-  request, so keep each agent's set small.
+- Tool count: 50 runtime tools per request. Tool search is on by default for multi-turn
+  agents at 20+ tools (inline tools defer behind `tool_search`, and
+  `tools.toolSearch.enabled: false` opts out). Single-turn agents send every tool on every
+  request, so keep sets small.
 - Save-time checks: `validate_flow` reports several checklist rows as stable codes
   (see `references/checklist.md`, "Checked for you on Runtype").
 
