@@ -48,7 +48,7 @@ legacy flat-agent templates.
 
 ## How import works
 
-1. User opens the template in the Runtype UI (or via MCP `import_*` flow).
+1. User opens the template in the Runtype UI, or an agent passes its link to the MCP tool `create_product_from_example` (`url`, plus `variables`).
 2. The platform shows a form generated from `template.variables`.
 3. User fills in the values.
 4. The platform substitutes `{{key}}` references in `productObject` with the user-supplied values.
@@ -139,7 +139,7 @@ Substitution happens at import time via `{{key}}`. Use these in any text field i
 3. Identify what the next user would need to change:
    - Credentials → pending-secret pattern.
    - Other config → `template.variables`.
-4. Export the product as an FPO Template (the platform has tools for this, or you can assemble it by hand from `get_product`).
+4. Assemble the FPO Template from the tested resources (`get_product`, `get_agent`, `get_flow`, `get_tool`), wrapping the product object with `template.variables`.
 5. Validate: `validate_product` on the resolved object (substitute test values for variables), `validate_product_tool` / `validate_product_flow` for sub-parts.
 6. Ship the JSON.
 

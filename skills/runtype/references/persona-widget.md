@@ -53,7 +53,7 @@ CDN remains the right choice for Persona.
 
 **Pin an exact version on Runtype-deployed pages.** A deployed app bundle is immutable and
 cached, so on a `static` app (or any Runtype-hosted page) replace `latest` with a pinned
-version like `https://cdn.runtype.com/persona/4.6.0/...` so a new release never shifts the
+version like `https://cdn.runtype.com/persona/<version>/...` (the current `@runtypelabs/persona` release on npm) so a new release never shifts the
 widget code underneath your shipped bundle.
 
 ## Client token

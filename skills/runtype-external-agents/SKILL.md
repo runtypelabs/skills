@@ -44,8 +44,8 @@ Capability matrix to state plainly:
    fine attribution target) or an `external` agent for lane B. Read the `agent_...` id
    back from `list_agents`.
 2. A telemetry API key: dashboard **Settings → API Keys → Telemetry Ingest**
-   (`TELEMETRY:WRITE`, append-only). No MCP tool mints API keys; `request_api_key` with
-   `["TELEMETRY:WRITE"]` files a request a human approves. Never paste key values into
+   (`TELEMETRY:WRITE`, append-only). No MCP tool mints API keys; where the account offers
+   `request_api_key`, calling it with `["TELEMETRY:WRITE"]` files a request a human approves. Never paste key values into
    chat; write them to `.dev.vars`, `wrangler secret put`, or the user's secret store.
 
 ## Lane A recipes
@@ -70,9 +70,9 @@ at module scope in `app.ts`, and tell the user this also removes eval capture. T
 use the same destination and store no payloads unless the agent class sets
 `storeMessages = true` and `storeTools = true`.
 
-**Cloudflare Agents SDK (`agents`): dedicated adapter beta, release pending.** Do not recommend an npm install or dashboard chip yet. The adapter is acceptance-gated. Once released, it wraps the application's one `streamText` call with `observeStreamTextOptions`, sends observations through `createDurableObserver`, and uses a separate SQLite Durable Object (`RuntypeOtlpOutbox`) for session state, immutable batches, retries, and alarms. It sends OTLP directly to Runtype; it does not need a Workers Observability destination. The app supplies stable submission and conversation IDs plus the SDK request ID as the exchange ID, and keeps `RUNTYPE_AGENT_ID`, `RUNTYPE_API_KEY`, and `RUNTYPE_BASE_URL` as Worker-only bindings.
-
-All adapter content is off by default. `messages`, `instructions`, `tools`, and `errors` are separate opt-ins; system/developer messages need `instructions`, and tool arguments/results need `tools`. A redactor runs before storage and transmission. Structural tool-call identity and duration remain metadata when tool payloads are off. The companion reports only observed terminal facts: cancellation is `cancelled`; missing terminal or delivery failure is incomplete, never successful. Do not promise approval continuations, client tools, subagent trees, native-trace association, or hosted approval/resume controls. Preserve application `abortSignal`, `onFinish`, `onError`, and `prepareStep` callbacks when wrapping stream options; the pinned compatibility fixture uses `agents@0.22.0`, `@cloudflare/ai-chat@0.11.0`, and `ai@6.0.277`. Native Cloudflare traces may remain enabled for infrastructure diagnostics in Logs, and their Workers Observability route can retain native read-only approval history, but it is separate from the adapter lifecycle and cannot authorize or resume an approval.
+**Cloudflare Agents SDK (`agents`).** A dedicated Runtype adapter is not released yet; do not
+recommend an npm install for it. Until it ships, send OpenTelemetry GenAI spans with the
+generic OTLP setup below.
 
 **Flue on Node / Cloud Run / anywhere else.** Point exactly ONE Flue instrumentation at
 Runtype (two would double tokens and cost):

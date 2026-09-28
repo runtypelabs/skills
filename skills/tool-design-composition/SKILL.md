@@ -138,12 +138,11 @@ Cache the status briefly.
 
 ## On Runtype
 
-- **Tool count and residency.** A dispatch carries at most 50 runtime tools. At 20
-  the platform partitions them into a hot set plus a `tool_search` meta-tool. Pin the
-  must-use tools with `config.tools.toolSearch.alwaysLoaded` (or `alwaysLoaded: true`
-  on the tool), raise or lower the cut with `toolSearch.threshold`, or set
-  `toolSearch.enabled: false` to force every tool into context. Descriptions drive
-  both model choice and search ranking.
+- **Tool count and residency.** A dispatch carries at most 50 runtime tools, and every
+  configured tool is sent to the model on every request; hosted agents do not defer
+  tools behind a search step. Keep each agent's set small and task-focused, move rarely
+  used tools to a subagent, and make descriptions distinct, because they are all the
+  model has to choose by.
 - **Task bundle and tool chain.** A flow is the platform's explicit chain: fixed step
   order, data passing, per-step error handling. Expose it as one tool
   (`toolType: "flow"`) when the agent should run the whole sequence as a single call.

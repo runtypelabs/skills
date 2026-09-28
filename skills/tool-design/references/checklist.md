@@ -66,5 +66,5 @@ the row passes; the remaining rows are still yours to review by hand.
 | 30  | `RUNTIME_TOOLS_INVALID`               | The `runtimeTools` block fails structural validation, including a reserved name                                                                          |
 
 Enforced at runtime rather than at save time: the 30 s tool timeout (row 26), the
-50-tool request cap and `tool_search` activation at 20 (row 39), `{{secret:KEY}}`
+50-tool request cap (row 39; every configured tool is sent on each request), `{{secret:KEY}}`
 resolution (row 30), `hiddenParameterNames` (row 35), and approval gates (row 37).

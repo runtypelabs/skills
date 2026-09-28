@@ -181,10 +181,10 @@ attach them by id through `config.tools.toolIds`. Iterate with `update_tool` and
   listed tools; the agent's `_approvalReason` is display-only, never a control signal.
 - Audit: every tool call is traced on the run and visible in Runs, Logs, and
   `trace_execution`.
-- Timeouts: a tool call is capped at 30 s; longer work moves to a flow step (5 min
-  step budget) or a subagent.
-- Tool count: 50 runtime tools per request; at 20 the `tool_search` meta-tool
-  activates and only a hot set is loaded each turn.
+- Timeouts: a custom or external tool call is capped at 30 s; longer work moves to a
+  flow step (5 min default step budget) or a subagent.
+- Tool count: 50 runtime tools per request, and every configured tool is sent on every
+  request, so keep each agent's set small.
 - Save-time checks: `validate_flow` reports several checklist rows as stable codes
   (see `references/checklist.md`, "Checked for you on Runtype").
 
