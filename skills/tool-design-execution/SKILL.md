@@ -127,7 +127,7 @@ Both still need the timeout and idempotency decisions above.
   with the returned execution id. A `flow` tool is neither: the agent awaits the nested
   flow and gets its reduced result, so it must finish inside the tool's budget.
 - **Idempotency.** Records give command tools a natural key: `upsert-record` by a
-  stable external id instead of `create-record` on every call.
+  stable external id instead of a new `create_record` on every call.
 - **Compensation and boundaries in flows.** Per-step `errorHandling` (`"fail"` aborts,
   `"continue"` substitutes `defaultValue`, unset follows the step kind's default) plus
   `conditional` branches express the undo path; there is no cross-step transaction, so

@@ -56,7 +56,7 @@ more embed prose to this skill.
   CDNs are blocked there and fail silently). Deployed `static` apps allow scripts and styles
   from any https origin by default (authors can re-tighten via the manifest `csp` field), so
   third-party CDNs load — but the first-party CDN is still the right choice for Persona. On
-  a Runtype-deployed page, replace `latest` with a pinned version (e.g. `/persona/4.6.0/`)
+  a Runtype-deployed page, replace `latest` with a pinned version (`/persona/<version>/`, the current npm release)
   so a new release can't shift the widget code under your immutable app bundle.
 - Installer script: `https://cdn.runtype.com/persona/latest/install.global.js`.
 - Self-contained browser bundle: `https://cdn.runtype.com/persona/latest/index.global.js` (exposes `window.AgentWidget`).

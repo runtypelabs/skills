@@ -69,8 +69,9 @@ Use this routing table instead of loading every Runtype detail into context:
   `whatsapp`, `telegram`, `messaging`, `a2a`, and `hosted-page`.
 - Record: Runtype state and memory. It is not a replacement for the user's business
   database.
-- Eval: surface-level or capability-level comparison. Prefer surface/product evals when
-  measuring user experience.
+- Eval: eval suites (cases plus graders on a flow or agent) are the regression harness;
+  ad-hoc eval batches compare variants. Surface evals in the dashboard cover routing and
+  channel formatting end to end.
 - FPO template: the portable distribution format for a product.
 
 When a product has multiple capabilities on one conversational surface, Runtype can

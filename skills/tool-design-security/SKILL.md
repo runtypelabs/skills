@@ -139,8 +139,10 @@ Violations return a clear, logged error.
   a human; `timeout` bounds the wait; `requestReason` asks the model for a
   justification carried as the reserved `_approvalReason` parameter; `choices`
   (`alwaysAllow`, `alwaysDeny`) offers persistent decisions at the prompt. The reason
-  is display-only and must never drive the decision. On client-token and Persona
-  surfaces the account owner approves, not the end user.
+  is display-only and must never drive the decision. Client-token (Persona) chat and
+  product chat refuse approval-gated agents with 501 `APPROVAL_MODE_UNSUPPORTED`; gate
+  tools where a paused run can be resumed, such as API dispatch or a Slack, Telegram, SMS,
+  or iMessage surface running a multi-turn agent.
 - **Session context.** Durable working state belongs in `save_memory` /
   `recall_memory` (gated by `config.memory.enabled`) or in records, not in an
   ever-growing message array or a hand-rolled session store.

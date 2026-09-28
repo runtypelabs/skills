@@ -203,7 +203,7 @@ Defaults are designed for fast, cheap routing:
 - Minimum data over the wire
 - Alphabetical-label voting (A/B/C…)
 
-Overridable: model, system prompt, label scheme. **Run a product eval on the orchestrator** to compare strategies — out-of-box vs. tuned, alphabetical vs. semantic, small model vs. larger.
+Overridable: model, system prompt, label scheme. **Run a surface eval (dashboard) on the orchestrator** to compare strategies — out-of-box vs. tuned, alphabetical vs. semantic, small model vs. larger.
 
 If you need a custom router, you can replace the default — but try the default first. Routing should usually be a sub-second operation.
 
@@ -230,7 +230,8 @@ You don't manually add these. The agent adapts.
 > "I need an email auto-responder" → `email`
 > "I have one bot that should work over SMS, WhatsApp, and Telegram" → three surfaces (one per channel) with channel-specific tuning. The channels' constraints diverge enough that per-surface configuration almost always beats a single shared surface.
 > "I need a generic multi-channel messaging gateway" → `messaging`
-> "I want to federate an external agent into my product" → `a2a` surface, register the external agent as a capability
+> "I want to federate an external agent into my product" → `create_agent` with `agent_type: "external"` (A2A or `runtype-stream` endpoint), then add it as a capability
+> "I want other agents to call my product over A2A" → `a2a`
 > "I want Runtype to host a branded mini-app for this product" → `hosted-page`
 
 ## Trait-driven prompt construction

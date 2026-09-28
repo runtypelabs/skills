@@ -173,8 +173,8 @@ variation; it never widens a constrained enum or bypasses validation.
   xAI web search) from two providers on one step route to the first-listed
   owner and leave the other's tools inert; the validator reports
   `PROVIDER_TOOLS_MIXED_OWNERS`.
-- Descriptions drive both model choice and the `tool_search` ranking that activates
-  at 20 tools, so a vague description hides the tool twice.
+- Every configured tool is sent on every request, so names and descriptions are all
+  that separate one tool from its neighbors; a vague description loses to a specific one.
 - Built-in and Orthogonal tools ship with reviewed descriptions; read them through
   `get_platform_documentation(topic="builtin-tools")` and
   `get_platform_documentation(topic="orthogonal-tools")` as house style before writing
