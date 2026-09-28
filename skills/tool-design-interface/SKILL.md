@@ -173,8 +173,9 @@ variation; it never widens a constrained enum or bypasses validation.
   xAI web search) from two providers on one step route to the first-listed
   owner and leave the other's tools inert; the validator reports
   `PROVIDER_TOOLS_MIXED_OWNERS`.
-- Every configured tool is sent on every request, so names and descriptions are all
-  that separate one tool from its neighbors; a vague description loses to a specific one.
+- Names and descriptions are all that separate one tool from its neighbors, and with tool
+  search (on by default for multi-turn agents at 20+ tools) they are also what the model
+  searches; a vague description loses to a specific one.
 - Built-in and Orthogonal tools ship with reviewed descriptions; read them through
   `get_platform_documentation(topic="builtin-tools")` and
   `get_platform_documentation(topic="orthogonal-tools")` as house style before writing
