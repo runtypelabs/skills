@@ -185,9 +185,18 @@ Combined with hidden parameters (below), this is the security architecture for p
 
 ### Hidden parameters
 
-Every tool parameter can be marked hidden from the LLM. The model sees the tool's shape minus those parameters; the SDK fills them at invocation time (typically with authenticated request context, tenant info, user-scoped credentials, etc.).
+List parameter names in a runtime tool's `hiddenParameterNames` to fill them from execution variables instead of from the model. Runtype strips them from the model-facing schema, overrides any model-supplied value, and shows `[REDACTED]` in `tool_start` / `tool_input_complete`.
 
-Pattern: the LLM sees `lookup_orders(filter)` and decides to call it. Hidden parameters add `{ user_id, tenant_id, auth_token }` that the model never sees in its context window.
+Pattern: the LLM sees `list_orders(status)`. With `hiddenParameterNames: ['_tenant']` and a header `X-Tenant-Id: {{_tenant.id}}`, the verified tenant reaches the API without entering the model's context.
+
+- `_tenant` / `_endUser` come from the execution's end-user identity (Identity Exchange or a trusted backend). `_`-prefixed hidden names resolve only from the host and fail the call closed when unset. `_internal*` names are rejected.
+- A hidden name without a leading `_` is best-effort: if no execution variable (or `_record.metadata` field) matches, it stays visible and the model supplies it. Never use one for identity.
+- Tool templates resolve only tool arguments, hidden parameters, and `{{secret:KEY}}`. `{{_record.*}}`, `{{_flow.*}}`, and `{{_user.*}}` do not resolve in a tool's url/headers/body.
+- `{{_tenant.id}}` / `{{_endUser.id}}` are host-only automatically wherever referenced: external tool templates (runtime and saved tools) and `auth.headers` of MCP servers in an agent's `tools.mcpServers`. Saved MCP servers send static auth only.
+- For identity your API verifies itself, send `Authorization: Bearer {{_identity.token}}`: a per-call Runtype-signed JWT, minted only for an agent with a `tenancyStrategy`.
+- Credentials still go in `{{secret:KEY}}`, never in a hidden parameter.
+
+Docs: https://docs.runtype.com/developer-guides/guides/tool-template-variables
 
 ## Capability
 

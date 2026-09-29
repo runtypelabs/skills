@@ -139,6 +139,13 @@ page tools registered on `document.modelContext` and admitted by the chat surfac
 `behavior.webmcp` policy. Pair local tools with hidden parameters when authenticated
 context should not enter model context.
 
+For server-side tools that need the signed-in visitor's identity, pass an Identity
+Exchange proof as `identityProof` on `/v1/client/init` and `/v1/client/chat`, then
+reference `{{_tenant.id}}` or `{{_endUser.id}}` in the tool's header (or send
+`{{_identity.token}}` for a signed assertion your API verifies). The model cannot set
+these values, and the call fails closed when the execution has no identity. Docs:
+https://docs.runtype.com/developer-guides/guides/tool-template-variables
+
 Good local tool examples:
 
 - Read current page HTML or selected DOM regions.
