@@ -1,6 +1,6 @@
 ---
 name: runtype-external-agents
-description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
+description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, Pi, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
 user-invocable: true
 argument-hint: '[framework and what you want from Runtype: traces, evals, chat UI]'
 ---
@@ -37,10 +37,11 @@ Capability matrix to state plainly:
   content on the spans (`gen_ai.input.messages` / `gen_ai.output.messages`, or a supported
   framework's own attributes). `@runtypelabs/flue-otel` 0.5 and later sends it by default
   (`content: false` turns it off). Version 0.4 and earlier never did.
-- OpenClaw and Hermes send no conversation content by default. Set
-  `RUNTYPE_CAPTURE_CONTENT=true` for OpenClaw or
+- OpenClaw, Hermes, and the Pi coding agent send no conversation content by default. Set
+  `RUNTYPE_CAPTURE_CONTENT=true` for OpenClaw and Pi or
   `RUNTYPE_OTEL_CAPTURE_CONTENT=true` for Hermes. If the plugin receives no
-  content, the run has no transcript to capture as an eval case.
+  content, the run has no transcript to capture as an eval case. The Pi durable
+  binding sends content unless `content: false`.
 - Eval **re-run** (`run_eval_suite`) needs Runtype to be able to call the agent. An
   `external` agent over A2A works (recorded-tool replay cases are skipped).
   `runtype-stream` endpoints are not eval targets. Telemetry-only runs cannot be re-run.
@@ -129,6 +130,32 @@ characters. The filter cannot identify every secret. This plugin does not make
 Hermes callable from Runtype. Hermes can return a provider error before it emits
 `on_session_end`; `api_request_error` may recover, so a long-running gateway
 cannot immediately export that failed turn as terminal.
+
+**Pi (`@runtypelabs/pi-otel`).** One package, two bindings. Both send OTLP/JSON
+themselves; do not add an OpenTelemetry SDK. Each Pi run becomes one Runtype run
+(`invoke_agent`, one `chat` per model response, one `execute_tool` per tool result), and
+Runtype prices it from the model name. The pi-durable peer is minor-locked to `~1.0.0`, and
+pi-durable and `PiHarness` are experimental/beta upstream.
+
+- Pi coding agent: `pi install npm:@runtypelabs/pi-otel`. Set `RUNTYPE_API_KEY`
+  (`TELEMETRY:WRITE`) and `RUNTYPE_AGENT_ID` in the shell that starts `pi`;
+  `RUNTYPE_OTLP_URL` overrides the full trace URL. Content is off by default because
+  sessions carry source code; `RUNTYPE_CAPTURE_CONTENT=true` turns on transcripts and
+  eval capture. A run is one prompt until `agent_settled`. `RUNTYPE_DEBUG=true` prints
+  why nothing is sent.
+- pi-durable, including Cloudflare `PiHarness`: `npm install @runtypelabs/pi-otel`, then
+  `observePiDurable(harness, { agentId, apiKey, harnessId })` from `@runtypelabs/pi-otel/durable`
+  (`harnessId` is a stable id for the storage, e.g. `ctx.id.toString()` in a Durable Object)
+  right after `Harness.open`, then `await observer.recover(context)` before work resumes
+  so a run a restart interrupted stays in the same trace. With `PiHarness`, do both
+  inside the harness factory before returning the harness; never via `harness.pi()`,
+  which resolves after resumed work has started. In the Worker call
+  `ctx.waitUntil(observer.flush())` after each prompt. One input submission is one
+  run; `unanswered` is a failed run. Content is on by default; `content: false`, per-kind
+  switches, `maxChars` and `redact` narrow it.
+
+Report each Pi run through one producer only, or Runtype counts its tokens twice. Neither
+binding makes the agent callable from Runtype.
 
 **Flue on Node, Cloud Run, or another host.** Point exactly one Flue instrumentation at
 Runtype. Two would double the tokens and cost.
