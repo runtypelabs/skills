@@ -183,7 +183,10 @@ Required WebMCP setup:
 
 A custom browser chat UI that uses a client token calls `/v1/client/chat` and resumes
 with `/v1/client/resume`. That path follows the same surface `behavior.webmcp` policy as
-Persona.
+Persona. For an `approval_start` on a gate with `tools.approval.approver: "end-user"`,
+POST `{ sessionId, executionId, approvalId, decision }` to `/v1/client/approve` and read
+the continued SSE stream as you would from `/v1/client/resume`. Never send `remember`.
+Owner gates never reach a client-token chat; it refuses them with 501.
 
 A trusted server or SDK process can send local tools directly to `/v1/dispatch` as
 top-level `clientTools[]` and resume with `/v1/dispatch/resume`. This path requires a
