@@ -195,8 +195,10 @@ Violations return a clear, logged error.
     agent collect the decision in the conversation. Client-token (Persona) chat and
     product chat refuse approval-gated agents with 501 `APPROVAL_MODE_UNSUPPORTED`,
     except a root gate with `tools.approval.approver: "end-user"`, which the Persona
-    visitor approves in the widget. Use `end-user` only for tools that act on the
-    visitor's own data, spend no operator money, and can be undone.
+    visitor approves in the widget. Use `end-user` only when the gate asks for the
+    visitor's own consent (confirming their order, booking, or message). Keep
+    `owner` for gates that enforce your policy or budget (refunds, discounts,
+    credits, spend on your account): the visitor must not grant those to themselves.
     Email, schedule, webhook, Discord, and WhatsApp surfaces cannot collect a decision,
     and neither can Slack, Telegram, SMS, or iMessage for a single-pass agent. Watch
     for the `APPROVAL_UNANSWERABLE_ON_SURFACE` warning when you save an agent or bind it
