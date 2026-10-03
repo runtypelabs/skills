@@ -193,7 +193,10 @@ Violations return a clear, logged error.
   - Approval needs someone to answer it. API dispatch and agent execute wait for the
     approve call, and Slack, Telegram, SMS, and iMessage surfaces running a multi-turn
     agent collect the decision in the conversation. Client-token (Persona) chat and
-    product chat refuse approval-gated agents with 501 `APPROVAL_MODE_UNSUPPORTED`.
+    product chat refuse approval-gated agents with 501 `APPROVAL_MODE_UNSUPPORTED`,
+    except a root gate with `tools.approval.approver: "end-user"`, which the Persona
+    visitor approves in the widget. Use `end-user` only for tools that act on the
+    visitor's own data, spend no operator money, and can be undone.
     Email, schedule, webhook, Discord, and WhatsApp surfaces cannot collect a decision,
     and neither can Slack, Telegram, SMS, or iMessage for a single-pass agent. Watch
     for the `APPROVAL_UNANSWERABLE_ON_SURFACE` warning when you save an agent or bind it
