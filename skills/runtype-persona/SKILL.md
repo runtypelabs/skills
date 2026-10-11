@@ -175,8 +175,9 @@ Required WebMCP setup:
 - Add origin-scoped `behavior.webmcp.allowlist` rules for page tools that should be
   callable, for example `{ origin: "https://store.example.com", tools: ["search_*"] }`.
   The server enforces only `enabled` and `allowlist`. `behavior.webmcp.requireConfirmFor`
-  (for example `["checkout_*"]`) is a confirmation hint for Persona, not a security
-  boundary.
+  (for example `["checkout_*"]`) forces Persona's confirmation and is not a security
+  boundary: chat dispatch does not enforce it, and the voice direct route never picks a
+  listed tool.
 - After real traffic, open the surface's **WebMCP** section in the dashboard to review
   discovered tools and observed origins. Discovery records the offered page tools before
   allowlist filtering.
