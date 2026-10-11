@@ -26,21 +26,23 @@ Before designing or creating resources:
 - Capability scoping: `get_build_instructions(task="explain-capabilities")`.
 
 For a product build, pass `focus` as a comma-separated list when the product clearly
-needs one of these areas: `commerce`, `embed`, `subagents`, `skills`, `search`, or
-`retrieval`. The response then includes those full guides instead of pointers to them.
+needs one of these areas: `commerce`, `embed`, `subagents`, `skills`, `search`,
+`retrieval`, or `decision-models`. The response includes those full guides instead of
+pointers to them.
 
 Then fetch only the `get_platform_documentation` topics the task needs:
 
-| Need                                        | Topics                                                                                                            |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Product shape (FPO, the product definition) | `product-schema`, `types-fpo`, `types-fpo-template`                                                               |
-| Flow step configs                           | `flow-step-types`, `types-flow-steps`                                                                             |
-| Delivery and embeds                         | `surface-types`, `types-surface-configs`, `persona-embed`                                                         |
-| Slack workspace connection                  | `slack-setup`                                                                                                     |
-| Tools and credentials                       | `builtin-tools`, `orthogonal-tools`, `external-tools`; pass `vendor` instead of a topic for one Orthogonal vendor |
-| Models                                      | `models` plus the account's `list_model_configs`                                                                  |
-| Agent that runs outside Runtype             | `external-agents`, or the `runtype-external-agents` skill                                                         |
-| Validation or go-live blockers              | `validation-errors`, `setup-readiness`                                                                            |
+| Need                                                            | Topics                                                                                                            |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Product shape (FPO, the product definition)                     | `product-schema`, `types-fpo`, `types-fpo-template`                                                               |
+| Flow step configs                                               | `flow-step-types`, `types-flow-steps`                                                                             |
+| Delivery and embeds                                             | `surface-types`, `types-surface-configs`, `persona-embed`                                                         |
+| Slack workspace connection                                      | `slack-setup`                                                                                                     |
+| Tools and credentials                                           | `builtin-tools`, `orthogonal-tools`, `external-tools`; pass `vendor` instead of a topic for one Orthogonal vendor |
+| Routing, classification, relevance, matching, or rubric scoring | `decision-models` plus `list_decision_models`                                                                     |
+| Generative models                                               | `models` plus the account's `list_model_configs`                                                                  |
+| Agent that runs outside Runtype                                 | `external-agents`, or the `runtype-external-agents` skill                                                         |
+| Validation or go-live blockers                                  | `validation-errors`, `setup-readiness`                                                                            |
 
 The build instructions point to deeper topics, such as evals, when the task needs them.
 Do not fetch every catalog in advance, and do not read the same topic again as a resource.
@@ -146,6 +148,10 @@ finding, and ask whether to use UCP or the traditional commerce path before you 
 
 ## Guardrails
 
+- For bounded judgments, discover a decision model and read `decision-models`; do not put
+  a decision-only model in an agent or prompt step. Create and publish reusable question
+  sets before binding `builtin:typesafe_judge`. Build `state` explicitly, and never transfer
+  calibration thresholds or provider confidence across models without measurement.
 - Never invent schemas or model IDs. Fetch the docs and the account's model configs.
 - Set an explicit, enabled model on every agent and prompt step. Choose it from
   `list_model_configs` and the `models` topic. Never leave it to account defaults.
