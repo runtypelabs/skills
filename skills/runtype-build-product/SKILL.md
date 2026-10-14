@@ -86,9 +86,9 @@ finding, and ask whether to use UCP or the traditional commerce path before you 
      need complete strings for every row.
    - Use `agent_type` to narrow `list_agents`. Call the matching `get_*` tool for one
      resource's full configuration.
-3. Pick surfaces from the live `surface-types` docs. `messaging` is the generic
-   multi-channel surface. Prefer a dedicated surface such as
-   `slack`, `email`, or `sms` when you need channel-specific setup or formatting. For
+3. Pick surfaces from the live `surface-types` docs. Use the dedicated channel surface
+   (`slack`, `telegram`, `imessage`, `email`, `sms`, `discord`, `whatsapp`); the generic
+   `messaging` type is retired. For
    browser-side WebMCP tools, use a `chat` surface with `behavior.webmcp`, not an `mcp`
    surface. For WebMCP details and client-side tools outside the Persona widget, use the
    `runtype-persona` skill.
