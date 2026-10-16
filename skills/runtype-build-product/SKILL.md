@@ -150,7 +150,7 @@ finding, and ask whether to use UCP or the traditional commerce path before you 
 
 - For bounded judgments, discover a decision model and read `decision-models` before
   designing questions; do not put a decision-only model in an agent or prompt step. Create
-  and publish reusable question sets before binding `builtin:typesafe_judge`. Never transfer
+  and publish reusable question sets before binding `builtin:decision_judge`. Never transfer
   calibration thresholds or provider confidence across models without measurement, and never
   present an unmeasured threshold as calibrated.
 - Judgment designs that fail without an error: one call per candidate to rank a list (put
