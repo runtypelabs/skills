@@ -112,7 +112,7 @@ Schema feedback here is far more useful than waiting for create errors.
 | `get_agent`                   | Agent config                                    |
 | `update_agent`                | Partial update; a tool list replaces the set    |
 | `delete_agent`                | Remove                                          |
-| `list_agent_executions`       | Deprecated: use `list_runs` with `agentId`      |
+| `list_agent_executions`       | Deprecated: use `list_runs` with `agent_id`     |
 | `execute_agent`               | Send a message to an agent and capture response |
 | `export_agent_runtime`        | Self-contained definition for SDK execution     |
 | `list_agent_versions`         | Agent version list                              |
