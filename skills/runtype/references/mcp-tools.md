@@ -40,7 +40,7 @@ Resource discovery tools with potentially large rows (`list_products`, `list_age
 compact response by default: string values longer than 100 characters end in `…`. Keep
 that bounded form while browsing, then use the matching `get_*` tool for one resource.
 Pass `view: "full"` only when complete strings are required across the page.
-`list_agents` accepts `agent_type` (`runtype`, `external`, or `claude_managed`).
+`list_agents` accepts `agent_type` (`runtype`, `external`, or `claude_managed`) and `model` (case-insensitive equality or prefix match on `config.model`, for example `claude-sonnet`).
 
 | Tool                                                | Use for                                      |
 | --------------------------------------------------- | -------------------------------------------- |
