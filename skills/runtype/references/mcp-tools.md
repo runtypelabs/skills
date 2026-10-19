@@ -42,22 +42,23 @@ that bounded form while browsing, then use the matching `get_*` tool for one res
 Pass `view: "full"` only when complete strings are required across the page.
 `list_agents` accepts `agent_type` (`runtype`, `external`, or `claude_managed`) and `model` (case-insensitive equality or prefix match on `config.model`, for example `claude-sonnet`).
 
-| Tool                                                | Use for                                      |
-| --------------------------------------------------- | -------------------------------------------- |
-| `get_me`                                            | Confirm auth context: user id, org id, email |
-| `list_products`                                     | All products in the workspace                |
-| `list_flows`                                        | All flows                                    |
-| `list_agents`                                       | All agents                                   |
-| `list_tools`                                        | All tools                                    |
-| `list_surfaces`                                     | Surfaces for a given product                 |
-| `list_records`                                      | Records (filterable by type)                 |
-| `list_collections`                                  | Registered record types and schemas          |
-| `list_skills`                                       | Agent skills (see [Skills](#skills))         |
-| `list_schedules`                                    | All schedules                                |
-| `list_secrets`                                      | All secrets (metadata only)                  |
-| `list_conversations`                                | All conversations                            |
-| `list_available_models`                             | What models are available platform-wide      |
-| `list_model_configs` / `list_model_configs_grouped` | Models configured for this workspace         |
+| Tool                                                | Use for                                                                                 |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `get_me`                                            | Confirm auth context: user id, org id, email                                            |
+| `list_products`                                     | All products in the workspace                                                           |
+| `list_flows`                                        | All flows                                                                               |
+| `list_agents`                                       | All agents                                                                              |
+| `list_tools`                                        | All tools                                                                               |
+| `list_surfaces`                                     | Surfaces for a given product                                                            |
+| `list_records`                                      | Records (filterable by type)                                                            |
+| `list_collections`                                  | Registered record types and schemas                                                     |
+| `list_skills`                                       | Agent skills (see [Skills](#skills))                                                    |
+| `list_schedules`                                    | All schedules                                                                           |
+| `list_secrets`                                      | All secrets (metadata only)                                                             |
+| `list_conversations`                                | All conversations                                                                       |
+| `list_available_models`                             | What models are available platform-wide                                                 |
+| `list_extraction_models`                            | Extraction models for the `extract` step (field and image limits, pricing, credentials) |
+| `list_model_configs` / `list_model_configs_grouped` | Models configured for this workspace                                                    |
 
 ## Validation (use before create)
 
@@ -301,16 +302,17 @@ Threads on messaging surfaces (Slack, SMS, iMessage, email, Telegram, and others
 
 ## Models
 
-| Tool                         | Use                             |
-| ---------------------------- | ------------------------------- |
-| `list_available_models`      | Platform-wide model catalog     |
-| `list_model_configs`         | Workspace's configured models   |
-| `list_model_configs_grouped` | Grouped by base model           |
-| `create_model_config`        | Add a model with provider key   |
-| `update_model_config`        | Update provider key or settings |
-| `delete_model_config`        | Remove                          |
-| `toggle_model_config`        | Enable/disable                  |
-| `set_default_model_config`   | Set provider default            |
+| Tool                         | Use                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------- |
+| `list_available_models`      | Platform-wide model catalog                                                             |
+| `list_extraction_models`     | Extraction models for the `extract` step (field and image limits, pricing, credentials) |
+| `list_model_configs`         | Workspace's configured models                                                           |
+| `list_model_configs_grouped` | Grouped by base model                                                                   |
+| `create_model_config`        | Add a model with provider key                                                           |
+| `update_model_config`        | Update provider key or settings                                                         |
+| `delete_model_config`        | Remove                                                                                  |
+| `toggle_model_config`        | Enable/disable                                                                          |
+| `set_default_model_config`   | Set provider default                                                                    |
 
 Bring-your-own provider credentials: `list_provider_keys`, `create_provider_key`, `update_provider_key`, `delete_provider_key`, and `select_organization_provider_credential`. For an OpenAI-compatible endpoint, `discover_provider_models` reads its model list and `sync_provider_models` saves the models to offer.
 
