@@ -85,6 +85,8 @@ Schema feedback here is far more useful than waiting for create errors.
 
 `discover_mcp_server_tools` lists the tools an external MCP server offers before you register it.
 
+An `mcp` tool with `auth.type: "oauth2"` needs a human to sign in once. `get_tool`, `create_tool`, and `update_tool` return `connection` with `status`, `connectUrl` (the dashboard page `/tools/{toolId}/connect`), and `nextStep`. Hand the user `connectUrl` on `needs_connection`. Clients with URL elicitation open it directly.
+
 ## Flows (creating, running, versioning)
 
 | Tool                         | Use                                                             |
