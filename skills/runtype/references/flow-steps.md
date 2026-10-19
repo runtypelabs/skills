@@ -7,24 +7,25 @@ not a second schema registry; validate the complete `name` + `steps` before savi
 
 ## Pick the smallest suitable step
 
-| Need                                       | Step                                                  |
-| ------------------------------------------ | ----------------------------------------------------- |
-| Generate prose, classify, or extract JSON  | `prompt`                                              |
-| Invoke a saved agent                       | `execute-agent`                                       |
-| Format existing data into a document       | `template`; `generate-pdf` for a hosted PDF           |
-| Host a file                                | `store-asset`                                         |
-| HTTP retrieval / structured API call       | `fetch-url` / `api-call`                              |
-| Fetch multiple pages / crawl a site        | `paginate-api` / `crawl`                              |
-| Search the web                             | `search` or a provider-compatible search tool         |
-| Invoke one exact tool without model choice | `tool-call`                                           |
-| Deterministic shaping, filtering, or math  | `transform-data`                                      |
-| Read one record / an array of records      | `get-record` / `list-records`                         |
-| Write metadata / update a known record     | `upsert-record` / `update-record`                     |
-| Embed, retrieve, or store vectors          | `generate-embedding`, `vector-search`, `store-vector` |
-| Durable memory                             | `save-memory`, `recall-memory`, `memory-summary`      |
-| Communicate                                | `send-email`, `send-event`, `send-stream`             |
-| Choose a branch / bounded repetition       | `conditional` / `loop`                                |
-| Set a value / poll an external endpoint    | `set-variable` / `wait-until`                         |
+| Need                                                                     | Step                                                  |
+| ------------------------------------------------------------------------ | ----------------------------------------------------- |
+| Generate prose, classify, or extract open-ended JSON                     | `prompt`                                              |
+| Read fixed typed fields (IDs, dates, amounts, lists) from text or images | `extract`                                             |
+| Invoke a saved agent                                                     | `execute-agent`                                       |
+| Format existing data into a document                                     | `template`; `generate-pdf` for a hosted PDF           |
+| Host a file                                                              | `store-asset`                                         |
+| HTTP retrieval / structured API call                                     | `fetch-url` / `api-call`                              |
+| Fetch multiple pages / crawl a site                                      | `paginate-api` / `crawl`                              |
+| Search the web                                                           | `search` or a provider-compatible search tool         |
+| Invoke one exact tool without model choice                               | `tool-call`                                           |
+| Deterministic shaping, filtering, or math                                | `transform-data`                                      |
+| Read one record / an array of records                                    | `get-record` / `list-records`                         |
+| Write metadata / update a known record                                   | `upsert-record` / `update-record`                     |
+| Embed, retrieve, or store vectors                                        | `generate-embedding`, `vector-search`, `store-vector` |
+| Durable memory                                                           | `save-memory`, `recall-memory`, `memory-summary`      |
+| Communicate                                                              | `send-email`, `send-event`, `send-stream`             |
+| Choose a branch / bounded repetition                                     | `conditional` / `loop`                                |
+| Set a value / poll an external endpoint                                  | `set-variable` / `wait-until`                         |
 
 `retrieve-record` is deprecated: use the explicit object/array readers instead.
 For GitHub retrieval, use a supported HTTP or catalog tool; there is no `fetch-github`
@@ -38,6 +39,9 @@ step. Do not infer a step type from a tool's name.
 - `upsert-record.sourceVariable` must resolve to a JSON object containing metadata,
   not a string or `{ name, type, metadata }` wrapper. A stable `recordName` is required
   for repeatable upserts; omitting it creates a new timestamp-named record each run.
+- An `extract` step's `<outputVariable>.values` is the flat map `upsert-record` reads
+  through `sourceVariable` (a variable path, not a `{{…}}` template), and `<outputVariable>.answers.<field>.confidence`
+  is what a `conditional` branches on.
 - Use `{{secret:KEY}}` for credentials. Do not inline values or use legacy dispatch
   `secrets` maps. Secret values belong in secure intake, not templates or chat.
 

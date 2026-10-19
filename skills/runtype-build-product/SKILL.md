@@ -27,8 +27,8 @@ Before designing or creating resources:
 
 For a product build, pass `focus` as a comma-separated list when the product clearly
 needs one of these areas: `commerce`, `embed`, `subagents`, `skills`, `search`,
-`retrieval`, or `decision-models`. The response includes those full guides instead of
-pointers to them.
+`retrieval`, `decision-models`, or `extraction-models`. The response includes those
+full guides instead of pointers to them.
 
 Then fetch only the `get_platform_documentation` topics the task needs:
 
@@ -40,6 +40,7 @@ Then fetch only the `get_platform_documentation` topics the task needs:
 | Slack workspace connection                                      | `slack-setup`                                                                                                     |
 | Tools and credentials                                           | `builtin-tools`, `orthogonal-tools`, `external-tools`; pass `vendor` instead of a topic for one Orthogonal vendor |
 | Routing, ranking, relevance, matching, verification, or scoring | `decision-models` plus `list_decision_models`                                                                     |
+| Pull typed fields out of text, documents, or images             | `extraction-models` plus `list_extraction_models`                                                                 |
 | Generative models                                               | `models` plus the account's `list_model_configs`                                                                  |
 | Agent that runs outside Runtype                                 | `external-agents`, or the `runtype-external-agents` skill                                                         |
 | Validation or go-live blockers                                  | `validation-errors`, `setup-readiness`                                                                            |
