@@ -216,6 +216,10 @@ them in new snippets.
 
 ## WebMCP page tools
 
+For tool design, native TypeScript authoring, and scenario verification, read
+[Design and verify WebMCP page tools](https://github.com/runtypelabs/skills/blob/main/skills/runtype-persona/references/webmcp-authoring.md). Keep the deployment
+and security configuration below when applying upstream WebMCP guidance.
+
 WebMCP page tools are browser-side local tools registered on the embedding page
 with `document.modelContext.registerTool(...)`. Persona snapshots them at the
 start of each chat turn, sends them to Runtype as `clientTools[]` with

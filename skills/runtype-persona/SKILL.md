@@ -136,6 +136,12 @@ and layout-specific token choices.
 
 ## Local Tools
 
+Before designing or auditing page tools, read
+[`webmcp-authoring.md`](references/webmcp-authoring.md). Use its
+journey, trust, confirmation, and evaluation checklist alongside the platform
+configuration below. Upstream WebMCP skills supplement these rules; they do not
+override Runtype authorization or Persona's compatibility contracts.
+
 Use browser-side local tools when the assistant needs to read page state or trigger UI
 actions that are only available in the front end. For Persona widgets, these are WebMCP
 page tools registered on `document.modelContext` and admitted by the chat surface's
