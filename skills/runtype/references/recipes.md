@@ -146,9 +146,9 @@ These are sketches, not copy-paste configs. The exact JSON shapes are best disco
 2. **Product** + capability binding.
 3. **Surface**: `create_surface` of type `chat`. Configure the launcher, theme, and visible features (`showToolCalls`, `showReasoning`). If the widget must call browser-side page tools, configure `behavior.webmcp` with an origin-scoped allowlist.
 4. **Client token**: `create_client_token` creates a public, scoped, revocable token that the browser-side widget uses.
-5. **Embed code**: `generate_persona_embed_code` returns a ready-to-paste HTML snippet. **Prefer this over hand-writing the embed.**
+5. **Embed code**: `generate_persona_embed_code` returns a ready-to-paste HTML snippet. **Prefer this over hand-writing the embed.** Then add `future: { v5Defaults: true }` to its config so the widget uses the V5 default styles.
 6. **Page tools (optional)**: If using WebMCP, set widget `config.webmcp.enabled`, then register tools on `document.modelContext` before Persona initializes. Keep the client token's `allowedOrigins` aligned with the `behavior.webmcp` origins.
-7. **Theming**: Before generating a custom theme, call `get_persona_theme_reference` to load the design-token docs and example themes. See `persona-widget.md` for the contrast rules and theming gotchas. Header tokens are easy to get wrong.
+7. **Theming**: Before generating a custom theme, call `get_persona_theme_reference` to load the design-token docs and example themes. See `persona-widget.md` for the contrast rules and theming gotchas. Header tokens are easy to get wrong. For a coordinated look, use the top-level `brand` option before you write component tokens. Under V5 defaults, the artifact pane is on; set `features.artifacts.enabled` to `false` to turn it off.
 
 **Gotchas:**
 

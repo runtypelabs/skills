@@ -218,7 +218,8 @@ permission is missing, or request a new key:
 1. Call `request_api_key` with the narrowest `permissions` that cover the task and a
    specific `reason`. Keep the returned `codeVerifier`. It cannot be recovered.
 2. Wait for a person to approve the request in the dashboard.
-3. Redeem it with `runtype api-keys claim <request_id> --verifier <codeVerifier>`, or with
+3. Redeem it with `RUNTYPE_KEY_REQUEST_VERIFIER=<codeVerifier> runtype api-keys claim <request_id>` (older
+   CLIs: `--verifier <codeVerifier>`), or with
    `claim_api_key` using the default `delivery: "secret"`.
 
 Never print the key into the conversation.
