@@ -17,6 +17,20 @@ If the Runtype MCP tools are not available, run `runtype install-mcp` for the cu
 agent harness. Until the tools appear, call them through the CLI with `runtype mcp tools`
 and `runtype mcp call <tool>`. For sign-in and account setup, use the `runtype` skill.
 
+## Delegate or drive
+
+If the Runtype MCP server lists `delegate_to_runtype`, hand it the build when the work
+stays inside the Runtype account and takes four or more dependent calls (build, validate,
+test-run). On a host that runs it as an MCP task (Claude Code's main conversation), three
+calls is enough. Put the goal, every decision and target id, and the acceptance check in
+`task` up front, relay the `task_url`, and verify anything the digest marks untested.
+
+Drive the steps yourself (below) when the change is one or two calls or an edit to a
+known id, when the user wants to steer each step, when the result feeds code you are
+writing, or when it needs local files, secrets, provider keys, or client tokens. The
+delegate cannot see or create those. Only the self-driven path needs
+`get_build_instructions`.
+
 ## Required first calls
 
 Before designing or creating resources:
