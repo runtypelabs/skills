@@ -201,15 +201,18 @@ Collections register a record type, optionally with a metadata schema: `list_col
 
 ## Tracing, logs, costs
 
-| Tool                    | Use                                               |
-| ----------------------- | ------------------------------------------------- |
-| `trace_execution`       | Structured trace tree for a single execution      |
-| `trace_conversation`    | Trace spanning multiple turns                     |
-| `list_logs`             | Query persisted logs                              |
-| `get_log_stats`         | Aggregated counts by level/category + time-series |
-| `get_batch_cost`        | Total cost for a batch execution                  |
-| `get_batch_record_cost` | One record's cost within a batch                  |
-| `get_record_costs`      | Per-record cost by model                          |
+| Tool                    | Use                                                                           |
+| ----------------------- | ----------------------------------------------------------------------------- |
+| `trace_execution`       | Structured trace tree for a single execution                                  |
+| `trace_conversation`    | Trace spanning multiple turns                                                 |
+| `list_logs`             | Query persisted logs                                                          |
+| `get_log_stats`         | Aggregated counts by level/category + time-series                             |
+| `query_traces`          | Group runs by agent, model, stop reason, day…; rates, percentiles, sample ids |
+| `read_trace_slice`      | Bounded span window of one trace, content on demand                           |
+| `compare_trace`         | Diff two runs' tool sequences, or two cohorts                                 |
+| `get_batch_cost`        | Total cost for a batch execution                                              |
+| `get_batch_record_cost` | One record's cost within a batch                                              |
+| `get_record_costs`      | Per-record cost by model                                                      |
 
 ## Batches and evals
 
@@ -357,7 +360,7 @@ Bring-your-own provider credentials: `list_provider_keys`, `create_provider_key`
 | `check_delegation`    | Long-poll a running delegation for events since `after`                                           |
 | `cancel_delegation`   | Stop a running delegation; completed changes stay                                                 |
 
-When the account has the flag, the server instructions recommend delegating multi-step work (build or change a flow, agent, product, surface or tool; debug a run; load records; run evals). Pass `wait_seconds: 240` on Claude Code; keep it under 60 on clients with a 60-second tool timeout. A result with `status: input_required` carries a `question`; answer it with `delegate_to_runtype { task_id, task: <answer> }`.
+When the account has the flag, the server instructions recommend delegating work that stays inside the account and takes four or more dependent calls, would need `get_build_instructions`, or reads many entities to produce a small answer. Call tools directly for single reads, known-id edits, output that feeds your code, `submit_batch` and `run_simulation`, and anything that needs local files, secrets, keys, or client tokens. On a host that runs the call as an MCP task (Claude Code 2.1.304+, main conversation), the bar drops to three calls, the call returns at once, and the host delivers the digest; `wait_seconds` is ignored there. Elsewhere, leave `wait_seconds` unset unless you know your tool-call timeout: the server defaults to 240 on Claude Code and 45 elsewhere. Then follow the result's `next_step`. A result with `status: input_required` carries a `question`; answer it with `delegate_to_runtype { task_id, task: <answer> }`.
 
 Start with the `index` topic (task-to-topic map). Useful documentation topics include `platform-catalog`, `surface-types`, `flow-step-types`, `models`, `product-schema`, `types-fpo`, `types-flow-steps`, `types-entities`, `types-surface-configs`, `orthogonal-tools`, `builtin-tools`, `agent-skills`, `external-tools`, `external-agents`, `evals`, `limits`, `validation-errors`, `setup-readiness`, `dashboard-links`, `mock-ecommerce`, `persona-embed`, `persona-fullscreen-assistant`, and `sdk-reference`.
 
