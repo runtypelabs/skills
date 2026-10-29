@@ -67,6 +67,10 @@ Discover before you act:
 
 Surfaces belong to a product. List or change them with the product ID in hand.
 
+When the server lists `delegate_to_runtype`, delegate debugging that needs trace, fix,
+and verify, and audits that page across many entities: the digest keeps large payloads
+out of your context. Single lookups and edits to a known id are faster as direct calls.
+
 Use `list_model_configs` to see which models the account can run. `list_available_models`
 is the platform catalog: its `isEnabled` and `isDefault` fields are always null or false,
 so it cannot tell you whether a model is enabled.
@@ -218,7 +222,8 @@ permission is missing, or request a new key:
 1. Call `request_api_key` with the narrowest `permissions` that cover the task and a
    specific `reason`. Keep the returned `codeVerifier`. It cannot be recovered.
 2. Wait for a person to approve the request in the dashboard.
-3. Redeem it with `runtype api-keys claim <request_id> --verifier <codeVerifier>`, or with
+3. Redeem it with `RUNTYPE_KEY_REQUEST_VERIFIER=<codeVerifier> runtype api-keys claim <request_id>` (older
+   CLIs: `--verifier <codeVerifier>`), or with
    `claim_api_key` using the default `delivery: "secret"`.
 
 Never print the key into the conversation.
