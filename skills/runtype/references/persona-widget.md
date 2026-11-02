@@ -13,6 +13,7 @@ For current WebMCP and fullscreen layout details, prefer `persona-embed`,
 - [Client token](#client-token)
 - [Three integration options](#three-integration-options)
 - [Config reference](#config-reference)
+- [V5 defaults and brand](#v5-defaults-and-brand)
 - [Programmatic access](#programmatic-access)
 - [WebMCP page tools](#webmcp-page-tools)
 - [Built-in client tools](#built-in-client-tools)
@@ -64,21 +65,59 @@ A chat surface is optional: a token that names the agent in `agentIds` works on 
 
 ## Current defaults to preserve
 
-- Script-tag installs use the tiny `launcher.global.js` fast path for ordinary floating launchers and defer the full widget until first open when safe.
-- Persona sanitizes rendered message HTML with DOMPurify by default. Keep `config.sanitize` enabled unless all rendered content is trusted.
-- Shadow DOM is opt-in with `useShadowDom: true`; the default is `false` for CSS compatibility.
-- For programmatic access, prefer `onChatReady` or `persona:chat-ready`.
+These apply under V4 and V5 unless noted. Under `future.v5Defaults: true`, the look
+changes as described in [V5 defaults and brand](#v5-defaults-and-brand), but the
+behavior in this list stays the same.
+
+- Script-tag installs use the tiny `launcher.global.js` fast path for ordinary floating launchers and defer the full widget until first open when safe. With V5 defaults, the deferred launcher renders the same circle launcher as the full widget.
+- Persona sanitizes rendered message HTML with DOMPurify by default. Keep `config.sanitize` enabled unless all rendered content is trusted. V5 does not change this.
+- Shadow DOM is opt-in with `useShadowDom: true`; the default is `false` for CSS compatibility. V5 does not change this.
+- For programmatic access, prefer `onChatReady` or `persona:chat-ready`. V5 does not change this.
+
+## V5 defaults and brand
+
+`future.v5Defaults: true` opts in to the V5 default styles. V4 stays the default until
+you set the flag. The flag selects defaults only: explicit options and theme tokens always
+win, and each affected setting stays independently configurable.
+
+With V5 defaults:
+
+- The launcher is a round button (`launcher.variant: "circle"`). Set `launcher.variant` to `"pill"` to keep the text-and-icon launcher.
+- The composer is an overlay (`composer.placement: "overlay"`) with a fade over the transcript.
+- Tool calls, reasoning, and approvals render as compact activity and decision rows.
+- Artifacts are enabled, including the artifact pane. Set `features.artifacts.enabled` to `false` to turn off the pane, artifact cards, and inline previews.
+
+Use the top-level `brand` option to coordinate colors, typography, corners, density, and
+elevation. Every field is optional, and it works with or without V5 defaults:
+
+- `accent`: Hex, `rgb()`, or `rgba()` with alpha 1. Drives accent colors, buttons, links, and focus.
+- `neutral`: Same formats as `accent`. Drives backgrounds, surfaces, text, and borders. When `colorScheme` is omitted, a dark neutral selects dark mode.
+- `font`: A CSS font-family string. Load custom fonts in the host page.
+- `radius`: `none`, `sm`, `md`, or `lg` (0, 4, 8, or 16px). Circular controls stay circular.
+- `density`: `compact`, `comfortable`, or `spacious`. Sets type size and header height.
+- `elevation`: `flat`, `subtle`, or `raised`. Sets shadows and borders.
+
+```ts
+config: {
+  future: { v5Defaults: true },
+  brand: { accent: '#7c3aed', radius: 'lg', elevation: 'subtle' },
+}
+```
+
+Explicit `theme` and `darkTheme` values override `brand`. For example, an explicit
+`theme.components.panel.borderRadius` wins over the brand's corners.
 
 ## Three integration options
 
 ### Option 1: Script installer (simplest)
 
-One script tag, no CSS import needed.
+One script tag, no CSS import needed. The `data-config` attribute turns on the V5 default styles.
 
 ```html
 <script
   src="https://cdn.runtype.com/persona/latest/install.global.js"
   data-runtype-token="YOUR_CLIENT_TOKEN"
+  data-config='{"future":{"v5Defaults":true}}'
 ></script>
 ```
 
@@ -89,7 +128,7 @@ To mount in a specific container:
 <script
   src="https://cdn.runtype.com/persona/latest/install.global.js"
   data-runtype-token="YOUR_CLIENT_TOKEN"
-  data-config='{"target":"#chat","apiUrl":"https://api.runtype.com"}'
+  data-config='{"target":"#chat","apiUrl":"https://api.runtype.com","future":{"v5Defaults":true}}'
 ></script>
 ```
 
@@ -114,6 +153,7 @@ included, on `window.siteAgentConfig` and load the installer):
     config: {
       apiUrl: 'https://api.runtype.com',
       clientToken: 'YOUR_CLIENT_TOKEN',
+      future: { v5Defaults: true },
       parserType: 'json',
       postprocessMessage: ({ text }) => markdownPostprocessor(text),
       launcher: {
@@ -141,6 +181,7 @@ initAgentWidget({
   target: '#chat',
   config: {
     ...DEFAULT_WIDGET_CONFIG,
+    future: { v5Defaults: true },
     apiUrl: 'https://api.runtype.com',
     clientToken: 'YOUR_CLIENT_TOKEN',
     parserType: 'json',
@@ -151,24 +192,26 @@ initAgentWidget({
 
 ## Config reference
 
-| Property                                 | Type                          | Notes                                                             |
-| ---------------------------------------- | ----------------------------- | ----------------------------------------------------------------- |
-| `target`                                 | string \| HTMLElement         | CSS selector or DOM element                                       |
-| `useShadowDom`                           | boolean                       | Style isolation (default false)                                   |
-| `config.apiUrl`                          | string                        | `https://api.runtype.com` (or another configured Runtype API URL) |
-| `config.clientToken`                     | string                        | Browser-safe client token from `create_client_token`              |
-| `config.parserType`                      | `'json'`                      | Always `'json'` for Runtype streams                               |
-| `config.postprocessMessage`              | function                      | Use `markdownPostprocessor` for rich text                         |
-| `config.launcher`                        | object                        | `{ enabled, title, subtitle, position }`                          |
-| `config.colorScheme`                     | `'light' \| 'dark' \| 'auto'` | Theme mode                                                        |
-| `config.theme`                           | `DeepPartial<PersonaTheme>`   | Light theme overrides                                             |
-| `config.darkTheme`                       | `DeepPartial<PersonaTheme>`   | Dark theme overrides                                              |
-| `config.sanitize`                        | `boolean \| (html) => string` | Sanitize rendered message HTML; default uses DOMPurify            |
-| `config.webmcp`                          | object                        | Widget-side WebMCP page-tool discovery/execution config           |
-| `config.features.askUserQuestion.expose` | boolean                       | Advertise built-in LOCAL `ask_user_question` via `clientTools[]`  |
-| `config.features.suggestReplies.expose`  | boolean                       | Advertise built-in LOCAL `suggest_replies` via `clientTools[]`    |
-| `windowKey`                              | string                        | Stores handle on `window[windowKey]` for programmatic access      |
-| `onChatReady`                            | `(handle) => void`            | Callback when the controller API is callable                      |
+| Property                                 | Type                          | Notes                                                                                                                          |
+| ---------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `target`                                 | string \| HTMLElement         | CSS selector or DOM element                                                                                                    |
+| `useShadowDom`                           | boolean                       | Style isolation (default false)                                                                                                |
+| `config.apiUrl`                          | string                        | `https://api.runtype.com` (or another configured Runtype API URL)                                                              |
+| `config.clientToken`                     | string                        | Browser-safe client token from `create_client_token`                                                                           |
+| `config.parserType`                      | `'json'`                      | Always `'json'` for Runtype streams                                                                                            |
+| `config.postprocessMessage`              | function                      | Use `markdownPostprocessor` for rich text                                                                                      |
+| `config.launcher`                        | object                        | `{ enabled, title, subtitle, position }`                                                                                       |
+| `config.colorScheme`                     | `'light' \| 'dark' \| 'auto'` | Theme mode                                                                                                                     |
+| `config.future.v5Defaults`               | boolean                       | Selects the V5 default styles; explicit options and theme tokens still win (default false)                                     |
+| `config.brand`                           | object                        | Coordinated `accent`, `neutral`, `font`, `radius`, `density`, `elevation`; see [V5 defaults and brand](#v5-defaults-and-brand) |
+| `config.theme`                           | `DeepPartial<PersonaTheme>`   | Light theme overrides                                                                                                          |
+| `config.darkTheme`                       | `DeepPartial<PersonaTheme>`   | Dark theme overrides                                                                                                           |
+| `config.sanitize`                        | `boolean \| (html) => string` | Sanitize rendered message HTML; default uses DOMPurify                                                                         |
+| `config.webmcp`                          | object                        | Widget-side WebMCP page-tool discovery/execution config                                                                        |
+| `config.features.askUserQuestion.expose` | boolean                       | Advertise built-in LOCAL `ask_user_question` via `clientTools[]`                                                               |
+| `config.features.suggestReplies.expose`  | boolean                       | Advertise built-in LOCAL `suggest_replies` via `clientTools[]`                                                                 |
+| `windowKey`                              | string                        | Stores handle on `window[windowKey]` for programmatic access                                                                   |
+| `onChatReady`                            | `(handle) => void`            | Callback when the controller API is callable                                                                                   |
 
 ## Programmatic access
 
@@ -180,7 +223,7 @@ Three ways. Pick by context.
 <script
   src=".../install.global.js"
   data-runtype-token="YOUR_CLIENT_TOKEN"
-  data-config='{"windowKey":"myChat"}'
+  data-config='{"windowKey":"myChat","future":{"v5Defaults":true}}'
 ></script>
 ```
 
@@ -190,6 +233,7 @@ Three ways. Pick by context.
 <script>
   window.siteAgentConfig = {
     clientToken: 'YOUR_CLIENT_TOKEN',
+    future: { v5Defaults: true },
     windowKey: 'myChat',
     onChatReady(handle) {
       handle.on('user:message', (message) => console.log('sent:', message))
@@ -215,6 +259,10 @@ Three ways. Pick by context.
 them in new snippets.
 
 ## WebMCP page tools
+
+For tool design, native TypeScript authoring, and scenario verification, read
+[Design and verify WebMCP page tools](https://github.com/runtypelabs/skills/blob/main/skills/runtype-persona/references/webmcp-authoring.md). Keep the deployment
+and security configuration below when applying upstream WebMCP guidance.
 
 WebMCP page tools are browser-side local tools registered on the embedding page
 with `document.modelContext.registerTool(...)`. Persona snapshots them at the
@@ -249,6 +297,7 @@ initAgentWidget({
   target: '#chat',
   config: {
     clientToken: 'YOUR_CLIENT_TOKEN',
+    future: { v5Defaults: true },
     webmcp: { enabled: true },
   },
 })
@@ -314,6 +363,7 @@ these when the assistant needs common client-side UI primitives:
 
 ```ts
 config: {
+  future: { v5Defaults: true },
   features: {
     askUserQuestion: { expose: true },
     suggestReplies: { expose: true },
@@ -354,6 +404,7 @@ Three control layers: **visibility**, **behavior**, **styling**.
 
 ```ts
 config: {
+  future: { v5Defaults: true },
   features: {
     showToolCalls: true,
     showReasoning: true,
@@ -425,13 +476,14 @@ Reasoning bubbles do **not** have an imperative override layer. Style them via t
 Hidden internals (consumer-facing):
 
 ```ts
-config: { features: { showToolCalls: false, showReasoning: false } }
+config: { future: { v5Defaults: true }, features: { showToolCalls: false, showReasoning: false } }
 ```
 
 Visible but not expandable:
 
 ```ts
 config: {
+  future: { v5Defaults: true },
   features: {
     toolCallDisplay: { expandable: false },
     reasoningDisplay: { expandable: false }
@@ -459,6 +511,21 @@ theme: {
 
 For ChatGPT/Claude-style fullscreen split-pane layouts (chat on left, artifacts on right), read the `runtype://guide/persona-fullscreen-assistant` MCP resource. It covers the non-default `launcher.fullHeight`, panel-chrome removal, split artifact pane, document toolbar preset, custom composer plugin, and the dark palette those UIs use.
 
+For an inline assistant that fills a host element instead of a fullscreen shell, use a frameless embed rather than `launcher.fullHeight`. Set `launcher: { enabled: false }` and `layout: { embedded: true }`. The host element needs a definite height, and the header stays hidden unless you set `layout.showHeader: true`. This works with V4 or V5 defaults.
+
+```ts
+initAgentWidget({
+  target: '#assistant',
+  config: {
+    apiUrl: 'https://api.runtype.com',
+    clientToken: 'YOUR_CLIENT_TOKEN',
+    future: { v5Defaults: true },
+    launcher: { enabled: false },
+    layout: { embedded: true },
+  },
+})
+```
+
 ## Generating artifacts that embed the widget
 
 When generating standalone HTML files or Claude artifacts that embed the widget:
@@ -470,3 +537,4 @@ When generating standalone HTML files or Claude artifacts that embed the widget:
 5. Don't invent APIs. The only init function is `initAgentWidget()`. The current ready event is `persona:chat-ready` (`persona:ready` is deprecated).
 6. For custom themes, call `get_persona_theme_reference` first; set explicit high-contrast component tokens.
 7. For programmatic access, use `windowKey` + `onChatReady` or the `persona:chat-ready` listener.
+8. Add `future: { v5Defaults: true }` to the widget config so the widget uses the V5 default styles. Under V5, the artifact pane is on by default; set `features.artifacts.enabled` to `false` to turn it off.
