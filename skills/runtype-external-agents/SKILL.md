@@ -1,6 +1,6 @@
 ---
 name: runtype-external-agents
-description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, Pi, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
+description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, Pi, Pydantic AI, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
 user-invocable: true
 argument-hint: '[framework and what you want from Runtype: traces, evals, chat UI]'
 ---
@@ -41,7 +41,8 @@ Capability matrix to state plainly:
   `RUNTYPE_CAPTURE_CONTENT=true` for OpenClaw and Pi or
   `RUNTYPE_OTEL_CAPTURE_CONTENT=true` for Hermes. If the plugin receives no
   content, the run has no transcript to capture as an eval case. The Pi durable
-  binding sends content unless `content: false`.
+  binding sends content unless `content: false`, and the Pydantic AI adapter unless
+  `content=False`.
 - Eval **re-run** (`run_eval_suite`) needs Runtype to be able to call the agent. An
   `external` agent over A2A works (recorded-tool replay cases are skipped).
   `runtype-stream` endpoints are not eval targets. Telemetry-only runs cannot be re-run.
@@ -157,6 +158,20 @@ pi-durable and `PiHarness` are experimental/beta upstream.
 Report each Pi run through one producer only, or Runtype counts its tokens twice. Neither
 binding makes the agent callable from Runtype.
 
+**Pydantic AI (`runtype-pydantic-ai`, PyPI).** Supports `pydantic-ai` 1.90+ and 2.x and
+sends OTLP itself; do not add an exporter. `pip install runtype-pydantic-ai`, set
+`RUNTYPE_API_KEY` (`TELEMETRY:WRITE`) and `RUNTYPE_AGENT_ID`, then call
+`runtype_pydantic_ai.instrument()` once at startup; every `Agent` in the process is traced.
+`RUNTYPE_OTLP_URL` overrides the full trace URL. With Logfire, call `instrument()` after
+`logfire.configure()`, or pass `runtype_pydantic_ai.span_processor()` in
+`additional_span_processors`; any instrumentation format from 2 up works. Each top-level run
+is one Runtype run (`invoke_agent`, `chat`, `execute_tool`); a sub-agent called from a tool
+stays in the outer run. `instrument(agent_ids={...})` maps agent names to Runtype agents.
+Content is on by default, including any personal data in prompts; `content=False` or
+`ContentOptions` (per-kind switches, `max_chars`, `redact`) narrow it. Spans export in
+batches; call `force_flush()` on the returned handle in tests and short-lived handlers.
+**Connect an agent** has a **Pydantic AI** chip that creates the agent and key.
+
 **Flue on Node, Cloud Run, or another host.** Point exactly one Flue instrumentation at
 Runtype. Two would double the tokens and cost.
 
@@ -248,7 +263,7 @@ inside `externalConfig` are the same.
 - `retryCount` (0 to 10; default 3) retries the connection only, never a stream that has
   started.
 - `framework` is a descriptive label (`flue`, `langchain`, `vercel_ai`, `crewai`,
-  `cloudflare`, `autogen`, or `custom`). It does not change the wire protocol.
+  `cloudflare`, `autogen`, `mastra`, or `custom`). It does not change the wire protocol.
 
 **Where to register.** The dashboard's **Connect External** tab on the new-agent page
 registers A2A endpoints only. Register a `runtype-stream` agent with `create_agent` or
