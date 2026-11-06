@@ -248,7 +248,7 @@ inside `externalConfig` are the same.
 - `retryCount` (0 to 10; default 3) retries the connection only, never a stream that has
   started.
 - `framework` is a descriptive label (`flue`, `langchain`, `vercel_ai`, `crewai`,
-  `cloudflare`, `autogen`, or `custom`). It does not change the wire protocol.
+  `cloudflare`, `autogen`, `mastra`, or `custom`). It does not change the wire protocol.
 
 **Where to register.** The dashboard's **Connect External** tab on the new-agent page
 registers A2A endpoints only. Register a `runtype-stream` agent with `create_agent` or

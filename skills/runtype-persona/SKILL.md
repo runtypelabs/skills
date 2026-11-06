@@ -68,9 +68,11 @@ Common wrong answers: `@runtype/persona`, `Persona.mount()`, `window.Persona`,
 
 ### Load from cdn.runtype.com
 
-When you load Persona from a CDN, use `cdn.runtype.com`. Pages published with the
-`publish_page` tool load scripts only from `cdn.runtype.com`, and scripts from other CDNs
-fail without an error. On a page that
+When you load Persona from a CDN, use `cdn.runtype.com`. Pages published with
+`builtin:publish_page` (run it through `execute_tool`) load scripts only from
+`cdn.runtype.com` and block inline scripts. Scripts from other CDNs and inline init code
+fail without an error, so use the script-installer form with `data-*` attributes there. On
+a page that
 Runtype deploys, replace `latest` with the current published version, for example
 `https://cdn.runtype.com/persona/PERSONA_VERSION/install.global.js`, so a new release does
 not change the widget under your deployed page. Pin the version in the script URL, never
@@ -99,7 +101,7 @@ as a `version` or `cdn` key in `data-config`.
    version requires exactly one agent in `agentIds`. A token with no target resolves like
    any run that names no version, so depending on your organization's live-default setting,
    a saved agent edit can reach the widget immediately.
-4. Generate embed code with `generate_persona_embed_code`.
+4. Generate embed code with `generate_persona_embed_code`, then add `future: { v5Defaults: true }` to the widget config to use the V5 default styles. Under V5, the artifact pane is on by default; set `features.artifacts.enabled` to `false` to turn it off. For a coordinated look without hand-written tokens, set the top-level `brand` option (`accent`, `neutral`, `font`, `radius`, `density`, `elevation`). Explicit `theme` values still win.
 5. For consumer-facing widgets, hide tool calls and reasoning by default.
 6. For internal or debug widgets, expose useful traces intentionally.
 7. For custom themes, set explicit high-contrast component tokens and verify header,
@@ -136,6 +138,12 @@ and layout-specific token choices.
 
 ## Local Tools
 
+Before designing or auditing page tools, read
+[`webmcp-authoring.md`](references/webmcp-authoring.md). Use its
+journey, trust, confirmation, and evaluation checklist alongside the platform
+configuration below. Upstream WebMCP skills supplement these rules; they do not
+override Runtype authorization or Persona's compatibility contracts.
+
 Use browser-side local tools when the assistant needs to read page state or trigger UI
 actions that are only available in the front end. For Persona widgets, these are WebMCP
 page tools registered on `document.modelContext` and admitted by the chat surface's
@@ -162,6 +170,9 @@ Required WebMCP setup:
 - Register page tools on `document.modelContext` in the host page, for example with
   `registerTool(...)`. Persona collects them on each turn and runs returned
   `webmcp:<name>` calls in the browser.
+- Install `@mcp-b/webmcp-polyfill` before you register, or check that
+  `document.modelContext` exists first. It is undefined on a browser without native
+  support, and Persona installs its fallback only at the first dispatch.
 - Create the client token with `product_surface_id` set to the `chat` surface, and include
   the embedding page origin in `allowed_origins`. A token that is not bound to the surface
   drops every page tool. `product_surface_id` is fixed at creation, so recreate an
@@ -171,13 +182,30 @@ Required WebMCP setup:
   skip approval only for safe read-only tools, and `webmcp.onConfirm` only when the host
   page needs custom confirmation UI. The widget-side `webmcp.allowlist` is a convenience
   filter, not a security boundary.
+- List consequential tools in `requireConfirmFor` so they always confirm, for example
+  `["checkout_*", "delete_*"]`. Put the list on the surface as
+  `behavior.webmcp.requireConfirmFor`; Persona reads it from `/v1/client/init` and merges
+  it with any widget-side `webmcp.requireConfirmFor`. A matching tool always shows the
+  approval bubble, even when `autoApprove` returns `true` or the call is a read-only voice
+  call. A custom `onConfirm` receives `info.confirmRequired: true` for a matching tool and
+  must not auto-approve it. Patterns match the bare tool name, and `*` matches any run of
+  characters.
 - Set the `chat` surface `behavior.webmcp.enabled` to `true`.
 - Add origin-scoped `behavior.webmcp.allowlist` rules for page tools that should be
   callable, for example `{ origin: "https://store.example.com", tools: ["search_*"] }`.
-  The server enforces only `enabled` and `allowlist`. `behavior.webmcp.requireConfirmFor`
-  (for example `["checkout_*"]`) forces Persona's confirmation and is not a security
-  boundary: chat dispatch does not enforce it, and the voice direct route never picks a
-  listed tool.
+  The server enforces only `enabled` and `allowlist`. `requireConfirmFor` is client-side
+  confirmation, not a security boundary: chat dispatch does not enforce it, so put every
+  tool that must never run in the allowlist decision, not only in `requireConfirmFor`. The
+  voice direct route never picks a listed tool.
+- To run page tools one at a time, set `webmcp.execution` to `"sequential"`. The default is
+  `"parallel"`.
+- Each page-tool call has a 30-second timeout. Cancellation is cooperative, so honor the
+  abort signal.
+- Persona truncates a page-tool result above 64 KB and adds a visible marker. It treats
+  every `webmcp:` result as untrusted, whatever the tool's hints say.
+- A custom `webmcp.onConfirm` takes full control of confirmation. Persona consults
+  `webmcp.autoApprove` only on its default confirmation UI, and never for a tool that
+  matches `requireConfirmFor`.
 - After real traffic, open the surface's **WebMCP** section in the dashboard to review
   discovered tools and observed origins. Discovery records the offered page tools before
   allowlist filtering.
