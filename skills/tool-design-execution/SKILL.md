@@ -56,6 +56,11 @@ One tool starts the job and returns immediately. Sibling tools poll and fetch:
 - The start tool's description says the operation is long and names the polling tool,
   so the agent does not wait on the first call.
 
+MCP also has an opt-in tasks extension (`io.modelcontextprotocol/tasks`) for this
+pattern. The client polls with `tasks/get` and sends input with `tasks/update`. Use it
+only when both the client and the server support it. Otherwise, use the job-handle tools
+above.
+
 ### Retries must be harmless (Idempotent Operation)
 
 Query tools are idempotent by nature. Command tools need one of:
