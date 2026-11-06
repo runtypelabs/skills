@@ -12,6 +12,9 @@ to call the wrong tool with the wrong arguments and will produce a persuasive re
 for doing so. The only defenses that hold are the ones the tool layer enforces without
 consulting the model.
 
+Tool results are a common way in. A result can carry text that a user or a third party
+wrote, and the model reads it in the same context as your instructions.
+
 ## Procedure
 
 1. **Name the principal.** Who is the tool acting as: a user, a service account, an
@@ -27,6 +30,12 @@ consulting the model.
    what the agent must establish itself through an identity anchor.
 
 ## Rules with examples
+
+### Treat tool results as untrusted data
+
+Sanitize tool output and validate it before it reaches the model. Mark results that
+carry user-authored or third-party text. A result never authorizes the next action: an
+instruction found in a result gets the same permission checks as any other call.
 
 ### Secrets never pass through the model (Secret Injection)
 
@@ -82,6 +91,11 @@ an `authRequired` error that names the missing scope and how to re-authenticate.
 the narrowest scope that works; different tools in the same set can require different
 scopes.
 
+An MCP server over HTTP reports a missing scope at run time with `403 Forbidden` and a
+`WWW-Authenticate: Bearer error="insufficient_scope"` header. The header's `scope`
+parameter lists every scope the operation needs, in one challenge, and the client runs
+step-up authorization to get them.
+
 ### Every call is logged (Audit Trail)
 
 Record what (tool name, parameters with secrets and PII redacted), who (principal,
@@ -98,10 +112,16 @@ Cache it for the session. Downstream tools reference the ids it returns.
 
 ### State across calls is explicit (Session Context)
 
-When tools share working state (current project, selected account, scope), store it
-server-side against the session, expose tools to set and read it, expire stale sessions,
-and echo the active context in results so the agent and the user can see what scope a
-call ran in.
+MCP revision 2026-07-28 removed protocol sessions. When tools share working state
+(current project, selected account, scope), have the server mint an opaque handle and
+pass it as an argument to the calls that use it:
+
+- A handle names state. It does not authenticate the caller, so check authorization
+  on every call that uses it.
+- State how long a handle lives. An expired handle returns a tool execution error that
+  says how to get a new one.
+- Echo the active context in results so the agent and the user can see what scope a
+  call ran in.
 
 ### Inject what the agent would not think to ask for (Context Injection)
 
@@ -147,13 +167,18 @@ Violations return a clear, logged error.
   `iss` to its own customer's org, because every org shares the signing key.
 - **Secrets.** `{{secret:KEY}}` references resolve from the managed secret store at
   execution and are the only credential contract. They resolve in `external` tool
-  `url`, `headers`, `body`, and auth; in the HTTP flow steps (`fetch-url`, `api-call`,
+  `url`, `headers`, and `body`; in the HTTP flow steps (`fetch-url`, `api-call`,
   `wait-until`, `paginate-api`); and in custom MCP server auth (`token`, `username`,
   `password`, `headers` values, and OAuth client credentials). They do not resolve in
   prompts, code, or a saved MCP tool's config. Full list:
   https://docs.runtype.com/user-guide/settings/managing-secrets
-  - A runtime tool of any other type (`custom`, `flow`, `local`) that contains a secret
-    reference is rejected with 400. Move the credential into an `external` tool.
+  - For an `external` tool, put the credential in a header, for example
+    `"Authorization": "Bearer {{secret:KEY}}"`. No executor reads an auth field on an
+    `external` tool.
+  - A runtime tool of any other type (`custom`, `flow`, `local`) that contains a
+    `{{secret:KEY}}` reference is rejected with 400. A `custom` tool can instead declare
+    managed secrets in `config.secrets`, which needs `SECRETS:READ`. Otherwise, move the
+    credential into an `external` tool.
   - An API key that dispatches runtime tools with secret references needs `SECRETS:READ`
     (or `SECRETS:*`), or the request fails with 403.
   - Before a run, call `check_secrets` with the referenced keys to confirm none is
@@ -171,10 +196,11 @@ Violations return a clear, logged error.
 - **Local tools.** A `local` tool runs in the caller's client (SDK or Persona), outside
   your server. Put no credentials or authorization decisions in it, and treat its result
   as untrusted input. Enforce permissions in an `external` tool or your own backend.
-- **Boundaries.** Cap calls with `tools.maxToolCalls` (1 to 100 per execution) and bound
-  the loop with `loopConfig.maxTurns` or `loopConfig.maxCost`. For expensive or
-  destructive tools, enforce a per-tool budget inside the tool; do not set
-  `tools.perToolLimits`, which is retired and gets the agent rejected. Runtype caps a
+- **Boundaries.** Cap calls with `tools.maxToolCalls` (1 to 100 per turn). A call past
+  the cap gets the tool error `Tool call limit of N reached`. Bound the loop with
+  `loopConfig.maxTurns` or `loopConfig.maxCost`. For expensive or destructive tools,
+  enforce a per-tool budget inside the tool. Do not set `tools.perToolLimits`: it is
+  retired. A save reports it as an advisory, and dispatch refuses the agent. Runtype caps a
   request's serialized `runtimeTools` at 1 MB and does not cap the tool count, so a
   smaller tool set is not an injection defense. Pin the host in an external tool's `url`
   instead of accepting it as a parameter.
@@ -191,12 +217,14 @@ Violations return a clear, logged error.
     `DELETE /v1/tool-approval-grants/{id}`. Review them when you tighten a tool.
   - The approver answers with `POST /v1/dispatch/approve` (or
     `POST /v1/agents/{id}/approve` for a saved agent).
-  - Approval needs someone to answer it. API dispatch and agent execute wait for the
-    approve call, and Slack, Telegram, SMS, and iMessage surfaces running a multi-turn
-    agent collect the decision in the conversation. Client-token (Persona) chat and
-    product chat refuse approval-gated agents with 501 `APPROVAL_MODE_UNSUPPORTED`,
-    except a root gate with `tools.approval.approver: "end-user"`, which the Persona
-    visitor approves in the widget. Use `end-user` only when the gate asks for the
+  - Approval needs someone to answer it. API dispatch, agent execute, and the Product
+    API wait for the approve call. AG-UI answers through an interrupt and `resume[]`.
+    Slack, Telegram, SMS, and iMessage surfaces running a multi-turn agent collect the
+    decision in the conversation.
+  - Product chat refuses every approval-gated agent with 501
+    `APPROVAL_MODE_UNSUPPORTED`. Client-token (Persona) chat refuses them too, except a
+    root gate with `tools.approval.approver: "end-user"`, which the Persona visitor
+    approves in the widget. Use `end-user` only when the gate asks for the
     visitor's own consent (confirming their order, booking, or message). Keep
     `owner` for gates that enforce your policy or budget (refunds, discounts,
     credits, spend on your account): the visitor must not grant those to themselves.
@@ -204,6 +232,9 @@ Violations return a clear, logged error.
     and neither can Slack, Telegram, SMS, or iMessage for a single-pass agent. Watch
     for the `APPROVAL_UNANSWERABLE_ON_SURFACE` warning when you save an agent or bind it
     to a surface; on those surfaces, remove the gate and enforce the rule in the tool.
+  - A2A and Product MCP surfaces also refuse a run that reaches an approval gate, and
+    Claude Managed agents return 501. These surfaces do not raise the save warning, so
+    check gated agents on them yourself.
   - Approval covers only tool calls a model chooses in an agent or a prompt step. A flow
     Tool Call step has no approval gate and always runs.
 - **Session context.** Keep per-conversation working state (current project, selected
@@ -212,8 +243,9 @@ Violations return a clear, logged error.
   `config.memory.enabled`) only for facts and preferences that must survive across
   sessions, and scope it with `config.memory.profileTemplate` (for example
   `{{_endUser.id}}`) so one end user's state never reaches another. An agent with a
-  `tenancyStrategy` ignores `profileTemplate` and scopes memory to the tenant and end
-  user itself.
+  `tenancyStrategy` ignores `profileTemplate` and scopes memory by the strategy's
+  `dataScope`: per agent for `product`, per tenant for `tenant`, and per end user for
+  `end-user`.
 - **Audit.** Every tool call is traced on the run (`trace_execution`, `list_logs`).
   Values of parameters listed in `hiddenParameterNames` are redacted in tool-input
   events; every other argument is recorded as sent, so keep PII and secrets out of

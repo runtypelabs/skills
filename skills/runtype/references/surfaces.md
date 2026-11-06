@@ -11,7 +11,7 @@ Many surfaces carry an `executionHint` that should be appended to the agent's sy
 - [Trait dimensions](#trait-dimensions)
 - [Surface type catalog](#surface-type-catalog)
 - [Auto-generated REST and MCP APIs](#auto-generated-rest-and-mcp-apis)
-- [The orchestrator (multi-capability conversational surfaces)](#the-orchestrator-multi-capability-conversational-surfaces)
+- [Capability routing (multi-capability surfaces)](#capability-routing-multi-capability-surfaces)
 - [Surface-specific auto-registered tools](#surface-specific-auto-registered-tools)
 - [Picking a surface](#picking-a-surface)
 - [Trait-driven prompt construction](#trait-driven-prompt-construction)
@@ -28,7 +28,7 @@ Many surfaces carry an `executionHint` that should be appended to the agent's sy
 | `inboundMediaSupport` | Whether the channel accepts inbound media (images, files)                                 |
 | `consumerType`        | `human` / `machine` / `agent`: informs the eval framing                                   |
 | `reasoningVisibility` | `pass_through` / `always_strip`: whether `<thinking>` traces are exposed                  |
-| `markdownDialect`     | `none` / `markdown` / `mdx` / `mrkdwn` / `html`                                           |
+| `markdownDialect`     | `none` / `markdown` / `mdx` / `mrkdwn` / `markdownv2` / `html` / `telegram_html`          |
 | `threadModel`         | `flat` / `threaded` / `reply_chain`                                                       |
 | `senderIdentity`      | `anonymous` / `authenticated` / `verified`                                                |
 | `maxResponseLength`   | Response length budget/cap (chars)                                                        |
@@ -78,7 +78,7 @@ Code Mode MCP server for programmatic agent access, for advanced agent integrati
 Email-triggered processing and automated responses.
 
 - Use cases: auto-reply support agent, invoice processor, email-to-task converter
-- `deliveryModel: async`, `mediaSupport: rich`, `markdownDialect: html`
+- `deliveryModel: async`, `mediaSupport: images`, `markdownDialect: html`
 - `reasoningVisibility: always_strip`: never leak thinking traces
 - `threadModel: reply_chain`
 - **Execution hint**: "Respond via email. Write in a professional, organized tone. Use clear paragraphs. Avoid bullet-point overload; prefer flowing prose where appropriate. Don't include reasoning traces, tool call narration, or internal process details."
@@ -153,18 +153,13 @@ WhatsApp Business for customer communication.
 Telegram bot for messaging.
 
 - Use cases: support, notifications, group admin
-- `mediaSupport: rich`, `interactiveUI: buttons`, `markdownDialect: html`, `maxResponseLength: 4096`
+- `mediaSupport: rich`, `interactiveUI: buttons`, `markdownDialect: telegram_html`, `maxResponseLength: 4096`
 - `messagesMutable: true`, `threadModel: flat`
 - **Execution hint**: clear and concise, no unnecessary verbosity, no reasoning traces
 
-### `messaging`
+### Retired: `messaging`
 
-Generic messaging surface for multi-channel delivery.
-
-- Use cases: unified support, channel-agnostic bots, internal routing across messaging providers
-- `deliveryModel: real_time`, `mediaSupport: images`, `markdownDialect: none`
-- Use when live docs expose a generic messaging integration for the target workflow. Prefer dedicated surfaces (`sms`, `whatsapp`, `telegram`, etc.) when channel-specific constraints, formatting, identity, or setup matter.
-- **Execution hint**: clear, concise, plain-text-safe responses with no reasoning traces
+The generic `messaging` type is retired, and no route serves it. An FPO that names it still parses, with a warning. Use one surface per channel (`sms`, `whatsapp`, `telegram`, and so on).
 
 ### `a2a`
 
@@ -181,6 +176,25 @@ Hosted publisher page for exposing one or more capabilities as a branded mini-ap
 - Use cases: public mini-apps, customer-facing tools, authenticated internal pages
 - Presentation config lives on surface items; product-level page behavior controls route, auth requirement, nav style, branding, and social metadata
 - Read `runtype://types/surface-configs` before authoring because this surface has structured `HostedPageBehavior` and `HostedPagePresentation` fields
+- Hidden from the dashboard and from MCP `create_surface`
+
+### `chrome_extension`
+
+Downloadable Manifest V3 Chrome extension that embeds the agent in the browser side panel.
+
+- Use cases: browser copilots, page-aware assistants, form filling and data extraction, internal browser tooling
+- Streaming is required. `mediaSupport: images`, `interactiveUI: generative`, `markdownDialect: mdx`
+- Caller credential: client token
+
+### `ag-ui`
+
+AG-UI protocol endpoint for custom agent front ends, such as CopilotKit clients.
+
+- Hidden from the catalog and flag-gated, and MCP `create_surface` does not accept it
+- Streaming is required. `deliveryModel: real_time`, `mediaSupport: none`
+- Caller credential: client token
+
+MCP `create_surface` also does not accept `imessage`.
 
 ## Auto-generated REST and MCP APIs
 
@@ -193,19 +207,25 @@ When you bind capabilities to a `mcp` or `api` surface, the platform **auto-gene
 
 So mapping three agents to one `mcp` surface gives you three MCP tools on one server. Mapping the same three agents to one `api` surface gives three REST endpoints.
 
-## The orchestrator (multi-capability conversational surfaces)
+## Capability routing (multi-capability surfaces)
 
-When more than one capability is bound to a single **conversational** surface (`chat`, `slack`, `telegram`, `discord`, `email`, `whatsapp`, etc.), Runtype provisions an **orchestrator agent** automatically. It decides which capability handles each incoming message.
+**On `chat`**, `behavior.mode` decides which capability handles a message:
 
-Defaults are designed for fast, cheap routing:
+- `single_orchestrator` (default): every message goes to the enabled entry point, then `orchestratorCapabilityId`, then the first capability.
+- `multi_capability`: a router picks a capability for each message. An active chat surface still needs exactly one enabled entry point.
 
-- Small inexpensive model
-- Minimum data over the wire
-- Alphabetical-label voting (A/B/C…)
+The router makes one call at temperature 0, with `gpt-5.4-nano` by default. It lists capabilities as `[n] name: description` and reads a number from the reply, then tries a capability name, then uses the fallback. The fallback is `behavior.fallbackCapabilityId` if that capability can be routed to, or the first capability.
 
-Overridable: model, system prompt, label scheme. **Run a surface eval (dashboard) on the orchestrator** to compare strategies: out-of-box vs. tuned, alphabetical vs. semantic, small model vs. larger.
+Set `behavior.router.model` and `behavior.router.prompt` to override it. A custom prompt must keep `{{capabilities}}`, `{{fallback}}`, and `{{message}}`. Routing runs on product chat (`POST /v1/products/{productId}/surfaces/{surfaceId}/chat`) and in surface evals. Client-token chat (`/v1/client/chat`) runs the token's target and does not route. **Run a surface eval (dashboard)** to compare strategies: default vs. tuned prompt, small model vs. larger.
 
-If you need a custom router, you can replace the default, but try the default first. Routing should usually be a sub-second operation.
+**On messaging channels** (`slack`, `telegram`, `discord`, `email`, `whatsapp`, and others), modes do not apply. Runtype applies these rules in order:
+
+1. An enabled entry point handles the message.
+2. If at most one capability is enabled, it handles the message.
+3. A platform judgment picks among up to 20 capabilities.
+4. With more than 20, the first routable capability handles the message.
+
+Routing should usually be a sub-second operation.
 
 ## Surface-specific auto-registered tools
 
@@ -229,10 +249,10 @@ You don't manually add these. The agent adapts.
 > "I want to run something every morning at 9" → `schedule`
 > "I need an email auto-responder" → `email`
 > "I have one bot that should work over SMS, WhatsApp, and Telegram" → three surfaces (one per channel) with channel-specific tuning. The channels' constraints diverge enough that per-surface configuration almost always beats a single shared surface.
-> "I need a generic multi-channel messaging gateway" → `messaging`
 > "I want to federate an external agent into my product" → `create_agent` with `agent_type: "external"` (A2A or `runtype-stream` endpoint), then add it as a capability
 > "I want other agents to call my product over A2A" → `a2a`
 > "I want Runtype to host a branded mini-app for this product" → `hosted-page`
+> "I want the agent in the Chrome side panel" → `chrome_extension`
 
 ## Trait-driven prompt construction
 
