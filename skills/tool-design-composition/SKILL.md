@@ -102,8 +102,10 @@ error the tool returns when the prerequisite is missing.
 
 ### Catalog the set when it is large (Tool Registry, Capability Matching)
 
-Past roughly twenty tools, tool-selection accuracy drops and every definition costs
-context tokens.
+Every tool definition costs context tokens, and selection gets harder as the set grows.
+Anthropic reports that selection accuracy degrades past 30 to 50 tools and recommends
+tool search at 10 or more. OpenAI suggests fewer than 20 tools at a time and calls this a
+soft suggestion. Twenty is Runtype's tool-search threshold, not a measured limit.
 Provide a `list_available_tools(category)` registry with name, description, category,
 and auth requirements, and a `find_tool_by_intent(intent)` search that ranks tools by
 semantic match with confidence and usage examples. Where your runtime can defer tools,
@@ -136,7 +138,7 @@ Cache the status briefly.
 
 ## Anti-patterns
 
-- Thirty atomic tools and no bundle for the sequence 80% of runs perform.
+- Thirty atomic tools and no bundle for the sequence most runs perform.
 - `delete_files` with no preview mode.
 - Two tools that differ only in one optional parameter.
 - A registry that lists tools without their auth requirements or categories.
@@ -149,14 +151,16 @@ Cache the status briefly.
   it caps the request's serialized `runtimeTools` at 1 MB. A model provider can still
   refuse a long tool list (`TOOL_COUNT_REFUSED_BY_PROVIDER`), so use tool search for
   large tool sets. Tool search is on by default for multi-turn agents: at 20 or more
-  tools, Runtype keeps a hot set loaded and defers the inline runtime tools behind a
-  `tool_search` tool that the model calls to load more. Saved, built-in, and MCP tools stay loaded. Set
+  capability tools (inline, saved, built-in, and MCP alike), Runtype keeps a hot set
+  loaded and defers the rest behind a `tool_search` tool that the model calls to load
+  more. Pin a tool with `tools.toolSearch.alwaysLoaded`. Set
   `tools.toolSearch.enabled: false` to send every tool on every request. Single-turn
   agents and flow prompt steps always send every tool, so keep those sets small or split
   them across subagents. Either way, make descriptions distinct, because they are what
   the model chooses by and what `tool_search` matches against.
-- **Tool-call budget.** An agent makes at most 10 tool calls per execution unless you
-  set `config.tools.maxToolCalls`. A per-item loop over a list uses up that budget
+- **Tool-call budget.** An agent makes at most 10 tool calls per turn unless you set
+  `config.tools.maxToolCalls` (1 to 100). A call past the cap gets the tool error
+  `Tool call limit of N reached`. A per-item loop over a list uses up that budget
   quickly, so ship a batch form, or raise the cap on purpose.
 - **Task bundle and tool chain.** A flow is the platform's explicit chain: fixed step
   order, data passing, per-step error handling. Expose it as one tool
@@ -193,7 +197,8 @@ Cache the status briefly.
   deterministically with no approval gate, so there a preview must be a distinct tool
   or a `mode` parameter. Approval details:
   `get_platform_documentation(topic="agent-design")`.
-- **Description length.** A new saved tool's description is capped at 500 characters. When
+- **Description length.** A new saved tool's description is capped at 500 characters on
+  create and 5,000 on update. Keep it short anyway. When
   dependency hints, replacement notes, and deprecation notes do not fit, move them into
   parameter descriptions or the error text.
 - **Registry and discovery.** `list_tools` covers saved tools,
