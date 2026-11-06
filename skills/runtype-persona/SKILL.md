@@ -99,7 +99,7 @@ as a `version` or `cdn` key in `data-config`.
    version requires exactly one agent in `agentIds`. A token with no target resolves like
    any run that names no version, so depending on your organization's live-default setting,
    a saved agent edit can reach the widget immediately.
-4. Generate embed code with `generate_persona_embed_code`.
+4. Generate embed code with `generate_persona_embed_code`, then add `future: { v5Defaults: true }` to the widget config to use the V5 default styles. Under V5, the artifact pane is on by default; set `features.artifacts.enabled` to `false` to turn it off. For a coordinated look without hand-written tokens, set the top-level `brand` option (`accent`, `neutral`, `font`, `radius`, `density`, `elevation`). Explicit `theme` values still win.
 5. For consumer-facing widgets, hide tool calls and reasoning by default.
 6. For internal or debug widgets, expose useful traces intentionally.
 7. For custom themes, set explicit high-contrast component tokens and verify header,
@@ -135,6 +135,12 @@ mode, panel chrome changes, a persistent shell, an artifact pane, composer custo
 and layout-specific token choices.
 
 ## Local Tools
+
+Before designing or auditing page tools, read
+[`webmcp-authoring.md`](references/webmcp-authoring.md). Use its
+journey, trust, confirmation, and evaluation checklist alongside the platform
+configuration below. Upstream WebMCP skills supplement these rules; they do not
+override Runtype authorization or Persona's compatibility contracts.
 
 Use browser-side local tools when the assistant needs to read page state or trigger UI
 actions that are only available in the front end. For Persona widgets, these are WebMCP
@@ -175,9 +181,10 @@ Required WebMCP setup:
 - Add origin-scoped `behavior.webmcp.allowlist` rules for page tools that should be
   callable, for example `{ origin: "https://store.example.com", tools: ["search_*"] }`.
   The server enforces only `enabled` and `allowlist`. `behavior.webmcp.requireConfirmFor`
-  (for example `["checkout_*"]`) forces Persona's confirmation and is not a security
-  boundary: chat dispatch does not enforce it, and the voice direct route never picks a
-  listed tool.
+  (for example `["checkout_*"]`) is returned by `/v1/client/init` for clients that honor
+  it, and is not a security boundary: chat dispatch does not enforce it, and the voice
+  direct route never picks a listed tool. Do not rely on it to override
+  `webmcp.autoApprove` unless your Persona version documents that support.
 - After real traffic, open the surface's **WebMCP** section in the dashboard to review
   discovered tools and observed origins. Discovery records the offered page tools before
   allowlist filtering.
