@@ -1,8 +1,6 @@
 ---
 name: runtype
 description: 'Scope a Runtype project or set up platform access; route implementation to the relevant Runtype skill.'
-user-invocable: true
-argument-hint: '[Runtype goal or setup question]'
 ---
 
 # Runtype
@@ -59,7 +57,12 @@ your session. A written configuration does not prove that the connection is acti
   CLI writes the key to a local key file. From MCP, call `request_api_key`, keep the
   `codeVerifier` it returns, and redeem the approved request with `claim_api_key`. Its
   default delivery stores the key as a Runtype secret and returns only a `{{secret:KEY}}`
-  reference, so the key is never shown in the conversation.
+  reference, so the key is never shown in the conversation. When the key must be collected
+  on a machine with no Runtype login (a fresh sandbox, for example), file the request with
+  `--allow-unauthenticated-claim` (MCP `allow_unauthenticated_claim: true`) and redeem it
+  there with `RUNTYPE_KEY_REQUEST_VERIFIER=<codeVerifier> runtype api-keys claim <id>`.
+  The key is limited to scopes you already hold and lasts at most 7 days. Treat the
+  verifier like the key itself.
 - **MCP.** Run `runtype install-mcp` for the current coding assistant, follow the action
   or restart it reports, then confirm the account with `runtype auth whoami --no-tty`.
 
@@ -94,7 +97,7 @@ Use this routing table instead of loading every Runtype detail into context:
   this coding-assistant skill. Read `get_platform_documentation(topic="agent-skills")`.
 - Surface: where users or machines reach the product, such as `chat`, `api`, `mcp`,
   `mcp_code`, `webhook`, `email`, `slack`, `schedule`, `sms`, `imessage`, `discord`,
-  `whatsapp`, `telegram`, `messaging`, `a2a`, and `hosted-page`. For the current list,
+  `whatsapp`, `telegram`, `a2a`, `chrome_extension`, and `hosted-page`. For the current list,
   read `get_platform_documentation(topic="surface-types")`.
 - Record: Runtype state and agent memory. Keep the source of truth for data that already
   lives in another system there.
@@ -103,9 +106,10 @@ Use this routing table instead of loading every Runtype detail into context:
   the dashboard also cover routing and channel formatting end to end.
 - FPO template: the portable distribution format for a product.
 
-When a product has multiple capabilities on one conversational surface, Runtype can
-provision an orchestrator that routes each incoming message to the right capability.
-Surfaces and capabilities are many-to-many.
+When a product has multiple capabilities on one `chat` surface, set
+`behavior.mode: "multi_capability"` to route each message to the right capability. The
+default mode sends every message to one capability. Messaging channels choose a capability
+without a mode. Surfaces and capabilities are many-to-many.
 
 ## Reference files
 
