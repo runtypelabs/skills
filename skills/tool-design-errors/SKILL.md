@@ -1,8 +1,6 @@
 ---
 name: tool-design-errors
 description: 'Design actionable agent tool errors, ambiguity handling, retry guidance, and fallback behavior, or debug an agent that loops on or misreads a failing tool.'
-user-invocable: true
-argument-hint: '[tool whose failure paths to design]'
 ---
 
 # Tool error design
@@ -95,7 +93,7 @@ success.
 ### Thresholds decide when to ask (Fuzzy Match Threshold)
 
 Confirming every match is slow. Never confirming is dangerous. Pick thresholds and
-document them. A reasonable starting point:
+document them. These numbers are a heuristic starting point, not a measured standard:
 
 - Above 90% confidence: auto-accept, and log the match for audit.
 - 50% to 90%: return the candidates as a confirmation request.
@@ -174,7 +172,7 @@ whether partial results are attached, and whether an async variant exists. See
   the body. A 2xx response that carries an error payload counts as a success and gets
   no `errorType`.
 - **To classify a third-party API you do not control**, wrap the call in a `flow` tool.
-  An `api-call` step with `errorHandling: "continue"` writes its `defaultValue` when
+  An `api-call` step with `errorHandling: { "onError": "continue" }` writes its `defaultValue` when
   the call fails, so set `defaultValue` to a structured error object, and add a
   `transform-data` step that gives success and failure one result shape. If the step
   has a `responseMapping`, the mapping also applies to `defaultValue`, so map the error
@@ -182,10 +180,17 @@ whether partial results are attached, and whether an async variant exists. See
   one fixed class. A `custom` tool has no network egress unless it opts in with
   `networkAccess` (and `secrets` for credentials); then it can make the call and shape
   the failure class itself.
-- **For an MCP server tool, put the class and recovery steps in the content text.**
-  Runtype passes the `content` of a `tools/call` result to the model and does not read
-  `isError`, so a result with `isError: true` is recorded as a successful call. A
-  non-2xx HTTP response or a JSON-RPC error is still reported as a failed call.
+- **For an MCP server tool, return `isError: true` and put the class and recovery steps
+  in the content text.** On hosted Runtype lanes, a result with `isError: true` fails the
+  call, and the content text becomes the error the model reads. A non-2xx HTTP response
+  or a JSON-RPC error is also reported as a failed call. The self-hosted runtime
+  (`@runtypelabs/runtime`) still reads only `content` on its direct MCP path, so there
+  an `isError` result counts as a success. Keep the error text readable either way.
+- **Map errors onto the transport's flag.** MCP marks a failed tool result with
+  `isError: true`, and Anthropic's API marks it with `is_error` on the `tool_result`
+  block. Report invalid arguments the same way, as a tool execution error the model
+  can read, not as a protocol error. The model can correct its call only from an error
+  it sees.
 - **`external` tool calls time out after 30 seconds**, and the model receives a
   `timeout` error. For slower upstreams, use a detached `subagent` tool (see
   `tool-design-execution`).
@@ -210,7 +215,7 @@ the recovery step tell the user to reconnect the server from **Tools**.
 ### Confirmation requests on chat surfaces
 
 Behind a Persona widget, expose the built-in local tools
-(`features.askUserQuestion.expose`, `features.suggestReplies.expose`). An ambiguous
+(`features.askUserQuestion.expose`, `suggestions.followUps.expose`). An ambiguous
 match then becomes a rendered choice that the user taps, not a JSON options list that
 the model has to narrate. Elsewhere, return the options in the tool result as shown
 above.
@@ -230,8 +235,9 @@ Some flow steps continue when they fail. This partial list shows the behavior wh
 - A `tool-call` step ignores `errorHandling`. It uses `config.onError`, which fails the
   step by default. With `onError: "continue"`, it writes `{ error, result: null }`.
 
-Set `errorHandling` to `"fail"` or `"continue"` explicitly on any step where a silent
-continue would hide a real failure from the agent.
+Set `errorHandling` to `{ "onError": "fail" }` or `{ "onError": "continue" }`
+explicitly on any step where a silent continue would hide a real failure from the agent.
+A bare string fails validation.
 
 ### Pauses and retries
 

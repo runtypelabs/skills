@@ -1,8 +1,6 @@
 ---
 name: runtype-admin
 description: 'Inspect, debug, or manage a live Runtype account through MCP or CLI; mutate only within the requested scope.'
-user-invocable: true
-argument-hint: '[live account operation or debugging task]'
 ---
 
 # Runtype Admin
@@ -15,12 +13,12 @@ workspace unless you run it against a disposable test account.
 Runtype has two hosted MCP servers. Both accept browser sign-in on the first call, or a
 Runtype API key sent as `Authorization: Bearer <key>`.
 
-| Server        | URL                                       | Tools                                                                                                                                                             |
-| ------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Standard MCP  | `https://api.runtype.com/v1/mcp/protocol` | One named tool per operation, such as `get_me`, `list_agents`, and `list_runs`                                                                                    |
-| Code Mode MCP | `https://code.runtype.com/mcp`            | `search`, `execute`, `get_platform_documentation`, `search_documentation`, `get_build_instructions`, `generate_persona_embed_code`, `get_persona_theme_reference` |
+| Server        | URL                                       | Tools                                                                                                                                                                                |
+| ------------- | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Standard MCP  | `https://api.runtype.com/v1/mcp/protocol` | One named tool per operation, such as `get_me`, `list_agents`, and `list_runs`                                                                                                       |
+| Code Mode MCP | `https://code.runtype.com/mcp`            | `search`, `execute`, `get_platform_documentation`, `search_documentation`, `get_build_instructions`, `generate_persona_embed_code`, `get_persona_theme_reference`, `submit_feedback` |
 
-To check which server is connected, look at the tool list. Code Mode lists only the seven
+To check which server is connected, look at the tool list. Code Mode lists only the eight
 tools in the table. Call `get_me` (on Code Mode, `execute` with
 `async (runtype) => runtype.getMe()`) to confirm the organization before you change anything.
 
@@ -66,6 +64,10 @@ Discover before you act:
   `list_agent_deployments`.
 
 Surfaces belong to a product. List or change them with the product ID in hand.
+
+When the server lists `delegate_to_runtype`, delegate debugging that needs trace, fix,
+and verify, and audits that page across many entities: the digest keeps large payloads
+out of your context. Single lookups and edits to a known id are faster as direct calls.
 
 Use `list_model_configs` to see which models the account can run. `list_available_models`
 is the platform catalog: its `isEnabled` and `isDefault` fields are always null or false,
@@ -217,9 +219,17 @@ permission is missing, or request a new key:
 
 1. Call `request_api_key` with the narrowest `permissions` that cover the task and a
    specific `reason`. Keep the returned `codeVerifier`. It cannot be recovered.
-2. Wait for a person to approve the request in the dashboard.
-3. Redeem it with `runtype api-keys claim <request_id> --verifier <codeVerifier>`, or with
-   `claim_api_key` using the default `delivery: "secret"`.
+2. Wait for a person to approve the request in the dashboard. Do not guess when they decide.
+   With a shell, run
+   `RUNTYPE_KEY_REQUEST_VERIFIER=<codeVerifier> runtype api-keys claim <request_id> --wait` in
+   the background (older CLIs: `--verifier <codeVerifier>`). It exits once the request is
+   decided and writes the key file on approval.
+3. Without a shell, call `wait_for_api_key_decision` with the request id. It never claims
+   the key and never needs the verifier. Or call `wait_for_event` with
+   `runtype.api_key_request.decided`, arguments `{ requestId }` and cursor `"0"`; if
+   nothing arrives by the request's `expiresAt`, call `claim_api_key` once to read the
+   outcome and stop. Then redeem with `claim_api_key` using the default
+   `delivery: "secret"`. Redeem within 10 minutes of approval.
 
 Never print the key into the conversation.
 
