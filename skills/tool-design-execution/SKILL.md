@@ -1,8 +1,6 @@
 ---
 name: tool-design-execution
 description: 'Design how an agent tool runs: sync or async job, idempotency, timeouts, transactions, and compensation. Use when a tool is slow, has side effects that a retry could duplicate, or spans several systems.'
-user-invocable: true
-argument-hint: '[tool whose execution semantics to design]'
 ---
 
 # Tool Execution Design
@@ -55,6 +53,11 @@ One tool starts the job and returns immediately. Sibling tools poll and fetch:
   work is cancellable.
 - The start tool's description says the operation is long and names the polling tool,
   so the agent does not wait on the first call.
+
+MCP also has an opt-in tasks extension (`io.modelcontextprotocol/tasks`) for this
+pattern. The client polls with `tasks/get` and sends input with `tasks/update`. Use it
+only when both the client and the server support it. Otherwise, use the job-handle tools
+above.
 
 ### Retries must be harmless (Idempotent Operation)
 

@@ -1,8 +1,6 @@
 ---
 name: tool-design
 description: 'Design or audit the tools an AI agent calls (MCP server tools, function calling, Runtype runtime and saved tools), or find out why an agent picks the wrong tool or misuses one. Routes naming, schema, output, error, execution, and security work to focused guides.'
-user-invocable: true
-argument-hint: '[tool or tool set to design or review]'
 ---
 
 # Tool Design
@@ -43,7 +41,7 @@ shapes, and error messages are the only orchestration layer there is.
 
 ## Procedure: design a new tool
 
-1. **Classify it** on the three axes and write the answers down before writing a schema:
+1. **Classify it** on the four axes and write the answers down before writing a schema:
    - Type: `query` (read-only, retryable, cacheable), `command` (side effects, document
      irreversibility), or `discovery` (reveals what exists, schema, capabilities).
    - Integration: API, database, file system, or system operation. Databases and
@@ -51,7 +49,11 @@ shapes, and error messages are the only orchestration layer there is.
    - Access pattern: synchronous (most tools; bounded seconds), async job (minutes;
      return a job id), streaming, or event-driven.
    - Maturity: start **atomic**. Move to enhanced, composite, or orchestrated only
-     when traces show the signal (see "Level up on evidence").
+     when traces show the signal (see "Level up on evidence"). Atomic does not mean
+     one tool per API endpoint. Anthropic recommends a tool that matches a task, such
+     as `search_contacts` or `schedule_event`, over thin wrappers such as
+     `list_contacts`. Start with the smallest task-shaped tool, and add composites
+     only on evidence.
 2. **Write the interface** with `tool-design-interface`: a verb-object name, a description
    that says when to use it and when not to, constrained parameters, smart defaults,
    natural identifiers, and dependency hints.
@@ -114,7 +116,9 @@ Start atomic and watch traces. Each signal maps to a specific move:
 | Long-running calls time out                    | Convert to an async job                         |
 
 Do not build the orchestrated version first. Composite tools built before atomic usage
-is understood encode guesses about workflows the agent never runs.
+is understood encode guesses about workflows the agent never runs. The trade-off runs
+both ways: a set of endpoint-sized tools makes the agent chain calls that one task-sized
+tool would answer.
 
 ## Pre-ship checklist
 
@@ -134,7 +138,8 @@ Every tool must pass all of these before it reaches an agent:
 - Invocations are logged with redacted parameters.
 - Destructive or costly commands are gated (approval, preview mode, or both).
 
-`references/checklist.md` carries the same list with the pattern each row comes from.
+`references/checklist.md` carries a longer, numbered version of this list, with the
+pattern each row comes from.
 
 ## On Runtype
 
@@ -171,8 +176,8 @@ a run handle, and `run_flow` with `async: true` returns an execution id (see
 
 The MCP `create_tool` accepts `tool_type` in `flow`, `custom`, `external`, `graphql`,
 `mcp`, `local`, with `name`, `description`, `parameters_schema` (JSON Schema), and
-`config`. `name` is at most 100 characters and `description` at most 500 on create, so
-keep the description tight and put detail in parameter descriptions and error text. The
+`config`. On create, `name` is at most 100 characters and `description` at most 500.
+`update_tool` accepts a description of up to 5,000 characters, but keep the description tight and put detail in parameter descriptions and error text. The
 REST API and SDKs (`POST /v1/tools`, spelled `toolType` and `parametersSchema`) accept
 the same set plus `subagent`. To delegate to agents over MCP, pick the route by need:
 
@@ -222,16 +227,17 @@ Iterate with `update_tool` and `get_tool`; read
   `timeout` in milliseconds, up to 300 s in the tool editor. MCP tools default to 30 s
   and can run up to 300 s only in background runs. A subagent tool defaults to 5 min.
   Longer work belongs in an async flow run or a detached subagent.
-- Tool set controls: `maxToolCalls` bounds tool-call loops, and `toolCallStrategy` is
-  `auto`, `required`, or `none`. Do not set `perToolLimits`: it is retired, and an agent
-  that carries it is rejected. Bound the loop with `loopConfig.maxTurns` or
+- Tool set controls: `maxToolCalls` bounds tool calls in one turn, and `toolCallStrategy`
+  is `auto`, `required`, or `none`. Do not set `perToolLimits`: it is retired. A save
+  reports it as an advisory, and dispatch refuses the agent. Bound the loop with `loopConfig.maxTurns` or
   `loopConfig.maxCost`, or enforce a per-tool budget inside the tool. `codeModeConfig`
   gives the agent a `code_mode` tool that chains a subset of its tools in sandboxed
   code, an alternative to hand-built bundle and batch tools.
 - Tool count: no cap; a request's serialized `runtimeTools` may total 1 MB. A provider
   can still refuse a long list (`TOOL_COUNT_REFUSED_BY_PROVIDER`). Tool search is on by
-  default for multi-turn agents at 20+ tools (inline tools defer behind `tool_search`,
-  and `tools.toolSearch.enabled: false` opts out); use it for large tool sets. Single-turn agents send every tool on every
+  default for multi-turn agents at 20+ capability tools (inline, saved, built-in, and MCP
+  tools all defer behind `tool_search`, and `tools.toolSearch.enabled: false` opts out);
+  use it for large tool sets. Single-turn agents send every tool on every
   request, so keep sets small or split them across agents.
 - Save-time checks: `validate_flow` reports several checklist rows as stable codes
   (see `references/checklist.md`, "Checked for you on Runtype").
@@ -279,25 +285,32 @@ Runtype staging and preview deployments only; the production API answers 404
    `replay: { synthesize: false }` on the design when the verdict must rest on
    recordings and deterministic operations only.
 6. **Decide on the investment card.** The report's `investment` section reads
-   Recommended only when no deciding conversation rested on a synthesized answer and
-   the synthesized share is under the threshold (25% by default); otherwise Indicative,
-   with the reason. Record the missing calls live or add a deterministic operation,
+   Recommended only when all three hold: the design clearly beats the baseline, the
+   verdict still holds without the conversations that a synthesized answer decided, and
+   the synthesized share is at or below the threshold (25% by default). Otherwise it
+   reads Indicative, with the reason. Record the missing calls live or add a deterministic operation,
    then rerun.
 7. **Hand it over.** `export_simulation_design_brief` returns the Markdown brief:
    before and after definitions, response mappings, error envelopes, each operation's
    checklist row and measured effect. Later live runs mark each operation adopted or
    not; `list_simulation_design_briefs` shows it beside the baseline trend.
 
-The checklist rows map to operations as follows:
+Each operation cites one checklist row by default. An operation's `reason.checklistRow`
+overrides it:
 
-| Checklist rows     | Operation                                | What the design changes                                  |
-| ------------------ | ---------------------------------------- | -------------------------------------------------------- |
-| 11, 12, 14, 18, 19 | `shape`                                  | Flattens, renames, drops or truncates fields of a result |
-| 13                 | `paginate`                               | One cursor style with `items`, `cursor` and `hasMore`    |
-| 20, 21, 22         | `error_design`                           | Error class, reason, recovery steps naming the next tool |
-| 6, 23              | `accept_identifier`                      | Accepts a name and resolves it to an id through a lookup |
-| 10, 34, 38, 39     | `add_tool`                               | A bundle, batch, discovery or identity tool              |
-| 1, 3, 4, 5         | `rename`, `describe`, `schema`, `preset` | Names, descriptions and argument schemas                 |
+| Operation           | Default row | What the design changes                                  |
+| ------------------- | ----------- | -------------------------------------------------------- |
+| `rename`            | 1           | A tool or parameter name                                 |
+| `describe`          | 3           | A description                                            |
+| `schema`            | 4           | An argument schema                                       |
+| `preset`            | 5           | Fixes an argument to a value                             |
+| `accept_identifier` | 6           | Accepts a name and resolves it to an id through a lookup |
+| `shape`             | 11          | Flattens, renames, drops or truncates fields of a result |
+| `paginate`          | 13          | One cursor style with `items`, `cursor` and `hasMore`    |
+| `error_design`      | 20          | Error class, reason, recovery steps naming the next tool |
+| `error_rewrite`     | 21          | Rewrites an error's text                                 |
+| `add_tool`          | 38          | A bundle, batch, discovery or identity tool              |
+| `hide`              | 39          | Removes a tool from the surface                          |
 
 Developer guide: "Design a better tool surface without deploying it"
 (`/developer-guides/guides/design-tool-surface-in-simulation` on the Runtype docs).
