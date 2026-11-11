@@ -70,7 +70,7 @@ When an agent isn't doing what you want, the first reach is to improve the syste
 
 Two different knobs that get confused.
 
-- **`maxToolCalls`**: how many tool calls the agent can make in one execution. Default is 10. Raise it deliberately when the task requires several lookups, writes, or sub-agent calls in one turn.
+- **`maxToolCalls`**: how many tool calls the agent can make in one turn. Default is 10. Raise it deliberately when the task requires several lookups, writes, or sub-agent calls in one turn.
 - **`agentLoop`** (`loopConfig.maxTurns`): a cap on how many _full turns_ the agent may take, each re-running with the previous results as context. The loop ends as soon as the model finishes its turn; it takes another turn only when the turn was cut off by the `maxToolCalls` budget, when the model call failed and is retried, or when a skill load or tool search expanded the tool surface (newly granted tools activate on the next turn, so skill-using agents need `maxTurns` of at least 2). It is a safety cap, not a target. A higher cap costs nothing on turns the agent never takes. The risk lives inside the loop, not in the ceiling: looping on the same goal repeats the same work unless you explicitly tell the agent to reflect or vary approach.
 
 Tune `maxToolCalls` before reaching for `agentLoop`. Raise `maxTurns` when the agent genuinely needs another pass: reflection, more tool calls than one turn's budget allows, or skill capabilities that only activate on a following turn.
@@ -221,19 +221,18 @@ When you bind capabilities to a `mcp` or `api` surface, the platform **automatic
 
 You're not coding API endpoints; you're declaring which capabilities go on which surface.
 
-### The orchestrator (when multiple capabilities → one conversational surface)
+### Capability routing (when multiple capabilities → one surface)
 
-When **more than one capability** is connected to a conversational surface (`chat`, `slack`, `telegram`, `discord`, `email`, etc.), Runtype **automatically provisions an orchestrator agent**. It decides which capability handles each incoming message.
+On a `chat` surface, `behavior.mode` decides which capability handles a message:
 
-Defaults:
+- `single_orchestrator` (default): every message goes to the enabled entry point, then `orchestratorCapabilityId`, then the first capability.
+- `multi_capability`: a router picks a capability for each message.
 
-- Inexpensive fast model (because routing at 10-20s defeats the purpose).
-- Minimum data over the wire, usually just a short label per capability.
-- Alphabetical labels (A, B, C…) for the route options.
+The router makes one call at temperature 0 with `gpt-5.4-nano` by default. It lists capabilities by number and reads back a number. Set `behavior.router` (`model`, `prompt`) and `behavior.fallbackCapabilityId` to override this. It runs on product chat (`POST /v1/products/{productId}/surfaces/{surfaceId}/chat`) and in surface evals. Client-token chat runs the token's target and does not route. **Run a surface eval (dashboard)** to compare routing strategies before launch.
 
-Overridable: model, system prompt, routing logic. **Run a surface eval (dashboard) on the orchestrator** to compare routing strategies before launch.
+Messaging channels have no modes. See `surfaces.md` for their rule.
 
-Practical implication: you don't need to write your own "router agent." Add the capabilities, let the orchestrator route.
+Practical implication: you don't need to write your own "router agent." Add the capabilities and set the mode.
 
 ## Surface
 
@@ -272,7 +271,7 @@ Filtering supports complex queries: `recordFilter: { type, where }` with conditi
 
 Cron or one-time trigger.
 
-Shape: `target` (exactly one of `flow_id` or `agent_id`; flow schedules may add `record_ids` or `record_type`), `trigger` (`{ type: "recurring", cron, timezone }` or `{ type: "one_time", run_at }`), and `messages` passed to each run.
+Shape: `target` (exactly one of `flow_id` or `agent_id`; flow schedules may add `record_ids` or `record_type`), `trigger` (`{ type: "recurring", cron, timezone }` or `{ type: "one_time", run_at }`), `inputs` (variables for each flow run), and `messages` passed to each run. Agents store `inputs` but do not apply them, so use `messages` for an agent.
 
 For flows: standard "call function on schedule." For agents: the trigger looks like a message being pushed into a conversation, which is useful for **heartbeat patterns** ("every morning, check the todo list and decide what to do"). Schedules can also fan out as a batch over all records of a particular type.
 

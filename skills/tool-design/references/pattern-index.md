@@ -3,6 +3,17 @@
 All 54 tool design patterns, grouped by the skill that owns them. Use this to find the
 skill for a named pattern.
 
+## Contents
+
+- [tool-design (classification and cross-cutting rules)](#tool-design-classification-and-cross-cutting-rules)
+- [tool-design-interface](#tool-design-interface)
+- [tool-design-output](#tool-design-output)
+- [tool-design-errors](#tool-design-errors)
+- [tool-design-execution](#tool-design-execution)
+- [tool-design-security](#tool-design-security)
+- [tool-design-composition](#tool-design-composition)
+- [Quick reference by question](#quick-reference-by-question)
+
 ## tool-design (classification and cross-cutting rules)
 
 | Pattern        | Intent                                                    |
