@@ -14,7 +14,7 @@ These are sketches, not copy-paste configs. The exact JSON shapes are best disco
 - [Recipe 6: Eval harness for an agent change](#recipe-6-eval-harness-for-an-agent-change)
 - [Recipe 7: Multi-agent system](#recipe-7-multi-agent-system)
 - [When to package as an FPO template](#when-to-package-as-an-fpo-template)
-- [Recipe 8: Multi-capability product with auto-orchestrator](#recipe-8-multi-capability-product-with-auto-orchestrator)
+- [Recipe 8: Multi-capability product with capability routing](#recipe-8-multi-capability-product-with-capability-routing)
 - [Recipe 9: Federate an external CrewAI agent into a Runtype product](#recipe-9-federate-an-external-crewai-agent-into-a-runtype-product)
 - [Recipe 10: Browser-side page tools for an embedded assistant (WebMCP)](#recipe-10-browser-side-page-tools-for-an-embedded-assistant-webmcp)
 - [Recipe 11: Privacy-sensitive product with hidden parameters + server-side local tools](#recipe-11-privacy-sensitive-product-with-hidden-parameters--server-side-local-tools)
@@ -102,7 +102,7 @@ These are sketches, not copy-paste configs. The exact JSON shapes are best disco
 3. **Schedule**: `create_schedule`:
    - `target: { flow_id }`
    - `trigger: { type: "recurring", cron: "0 8 * * 1-5", timezone: "America/New_York" }`
-   - `messages`: any per-run input (e.g. recipient list); fire-time variables such as `{{_now.date}}` resolve in the schedule's timezone
+   - `inputs`: variables each run receives (e.g. recipient list), referenced as `{{varName}}`; fire-time variables such as `{{_now.date}}` resolve in the schedule's timezone
 4. **Test**: `run_schedule_now` for an immediate manual run. Check `list_schedule_runs` for status, `trace_execution` for any failures.
 
 **Gotchas:**
@@ -145,16 +145,16 @@ These are sketches, not copy-paste configs. The exact JSON shapes are best disco
 1. **Agent**: `create_agent` with the support persona and any tools it needs (FAQ search, ticket creation, etc.).
 2. **Product** + capability binding.
 3. **Surface**: `create_surface` of type `chat`. Configure the launcher, theme, and visible features (`showToolCalls`, `showReasoning`). If the widget must call browser-side page tools, configure `behavior.webmcp` with an origin-scoped allowlist.
-4. **Client token**: `create_client_token` creates a public, scoped, revocable token that the browser-side widget uses.
-5. **Embed code**: `generate_persona_embed_code` returns a ready-to-paste HTML snippet. **Prefer this over hand-writing the embed.**
-6. **Page tools (optional)**: If using WebMCP, set widget `config.webmcp.enabled`, then register tools on `document.modelContext` before Persona initializes. Keep the client token's `allowedOrigins` aligned with the `behavior.webmcp` origins.
-7. **Theming**: Before generating a custom theme, call `get_persona_theme_reference` to load the design-token docs and example themes. See `persona-widget.md` for the contrast rules and theming gotchas. Header tokens are easy to get wrong.
+4. **Client token**: `create_client_token` creates a public, scoped, revocable token that the browser-side widget uses. For page tools, set `product_surface_id` to the chat surface. This value is fixed at creation, and an unbound token drops every page tool.
+5. **Embed code**: `generate_persona_embed_code` returns a ready-to-paste HTML snippet. **Prefer this over hand-writing the embed.** Then add `future: { v5Defaults: true }` to its config so the widget uses the V5 default styles.
+6. **Page tools (optional)**: If using WebMCP, set widget `config.webmcp.enabled`, then install `@mcp-b/webmcp-polyfill` and register tools on `document.modelContext`. Persona's own fallback arrives too late for registration at page load. See Recipe 10. Keep the client token's `allowedOrigins` aligned with the `behavior.webmcp` origins.
+7. **Theming**: Before generating a custom theme, call `get_persona_theme_reference` to load the design-token docs and example themes. See `persona-widget.md` for the contrast rules and theming gotchas. Header tokens are easy to get wrong. For a coordinated look, use the top-level `brand` option before you write component tokens. Under V5 defaults, the artifact pane is on; set `features.artifacts.enabled` to `false` to turn it off.
 
 **Gotchas:**
 
 - Wrong package name (`@runtype/persona` vs `@runtypelabs/persona`; the latter is correct), wrong API (`Persona.mount()` doesn't exist; use `initAgentWidget()`), wrong CSS path are common errors. The MCP-generated embed code avoids all of these.
 - For consumer-facing widgets, set `features.showToolCalls: false` and `features.showReasoning: false`. For internal debug surfaces, leave them on.
-- To let the model ask structured follow-up questions or propose reply chips, expose Persona's built-in LOCAL tools with `features.askUserQuestion.expose` and `features.suggestReplies.expose` instead of inventing custom tool UIs.
+- To let the model ask structured follow-up questions or propose reply chips, expose Persona's built-in LOCAL tools with `features.askUserQuestion.expose` and `suggestions.followUps.expose` instead of inventing custom tool UIs.
 - Do not model browser-side page actions as an `mcp` surface. Use WebMCP on the `chat` surface when the capability must run inside the user's page.
 
 ---
@@ -187,15 +187,15 @@ For a one-time model or prompt comparison, `submit_eval` with several eval confi
 
 Three viable patterns. Pick by where the routing decision lives.
 
-**Pattern A: Auto-orchestrator (Runtype-managed)**: preferred when each sub-agent is independently useful
+**Pattern A: Capability routing (Runtype-managed)**: preferred when each sub-agent is independently useful
 
 - Build each sub-agent independently. Each is its own agent with its own tools.
 - Add all sub-agents as capabilities of the product.
-- Bind all of them to the same conversational surface.
-- **Runtype auto-provisions an orchestrator agent** that routes incoming messages to the right sub-agent.
-- See Recipe 8 for the orchestrator-eval workflow.
+- Bind all of them to the same `chat` surface.
+- Set `behavior.mode: "multi_capability"` on the surface. The default mode sends every message to one capability.
+- See Recipe 8 for the setup and eval workflow.
 
-This is the default choice for multi-agent products. The platform handles the routing.
+This is the default choice for multi-agent products. The platform runs the routing.
 
 **Pattern B: Sub-agents as tools**: preferred when one agent should be primary and others assist
 
@@ -213,7 +213,7 @@ Choose A if multiple capabilities should be exposed to users via the same surfac
 
 **Gotchas:**
 
-- Pattern A: routing should be fast. If the orchestrator is slow, override to a smaller model or tune the system prompt.
+- Pattern A: routing should be fast. If the router is slow, set a smaller `behavior.router.model`.
 - Pattern B risks unbounded loops. Cap with `maxToolCalls`. Sub-agents should not call back into the orchestrator (no recursion).
 - Pattern C: less flexible but most predictable. Cost-effective for known workflows.
 
@@ -231,7 +231,7 @@ The result is a single distributable JSON document someone else can import in on
 
 ---
 
-## Recipe 8: Multi-capability product with auto-orchestrator
+## Recipe 8: Multi-capability product with capability routing
 
 **Shape**: A web chat that exposes three agents (sales, support, billing) and routes user messages automatically.
 
@@ -242,13 +242,33 @@ The result is a single distributable JSON document someone else can import in on
 3. `add_product_capability` three times, once per agent.
 4. `create_surface` of type `chat`.
 5. `add_surface_item` three times, wiring each capability into the same surface.
-6. **Runtype auto-provisions an orchestrator** because multiple capabilities are bound to the same conversational surface.
-7. Test the routing: send messages that obviously belong to each capability and verify they reach the right agent. `trace_conversation` shows the orchestrator's routing decisions.
-8. **Run a surface eval (dashboard) on the orchestrator** before launch. Send a set of messages with expected routing through the surface and compare strategies.
+6. Turn on routing with `update_surface`. The default mode, `single_orchestrator`, sends every message to one capability. `behavior` is merged shallowly, and the surface needs at least one enabled capability:
+   ```json
+   {
+     "behavior": {
+       "mode": "multi_capability",
+       "router": { "model": "gpt-5.4-nano" },
+       "fallbackCapabilityId": "<support capability id>"
+     }
+   }
+   ```
+7. Test the routing: send messages that obviously belong to each capability to `POST /v1/products/{productId}/surfaces/{surfaceId}/chat` and verify they reach the right agent. `trace_conversation` shows the routing decisions.
+8. **Run a surface eval (dashboard) on the routing** before launch. Send a set of messages with expected routing through the surface and compare strategies.
 
-**When to override the orchestrator default**: only if routing is slow (>1s) or wrong. The default uses an inexpensive model with minimum data over the wire. Customize the orchestrator's system prompt with domain hints if routing is borderline:
+Routing runs on that product chat route and in surface evals. A Persona widget on a client token (`/v1/client/chat`) does not route: it runs the token's target.
 
-> "Sales-related questions (pricing, demos, plans): route to A. Support questions (broken features, how-to): route to B. Billing questions (invoices, refunds): route to C. When ambiguous, prefer B."
+**When to override the router default**: only if routing is slow (>1s) or wrong. The router makes one call at temperature 0, and the default model is `gpt-5.4-nano`. It lists each capability as `[n] name: description`, so improve the capability descriptions first. If routing is still borderline, set `behavior.router.prompt`. Keep `{{capabilities}}`, `{{fallback}}`, and `{{message}}`, because Runtype adds nothing else to the prompt, and ask for the number:
+
+> "Route the user message to a capability. Sales covers pricing, demos, and plans. Support covers broken features and how-to questions. Billing covers invoices and refunds.
+>
+> Capabilities:
+> {{capabilities}}
+>
+> Respond with only the capability number. If none fits, respond with {{fallback}}.
+>
+> User message: {{message}}"
+
+Runtype reads the number from the reply (`3`, `[3]`, `3.`, or `option 3`). If it finds no number, it tries a capability name, then uses the fallback.
 
 ---
 
@@ -280,25 +300,48 @@ The result is a single distributable JSON document someone else can import in on
 **Steps**:
 
 1. Build the agent and a `chat` surface as in Recipe 5. Set the surface `behavior.webmcp.enabled: true` and add origin-scoped `behavior.webmcp.allowlist` rules, e.g. `{ origin: "https://app.example.com", tools: ["read_page", "open_record"] }`.
-2. Create a client token whose `allowedOrigins` includes the app origin, and generate the embed with `generate_persona_embed_code`.
+2. Create a client token with `product_surface_id` set to the chat surface and `allowedOrigins` including the app origin, then generate the embed with `generate_persona_embed_code`. The binding is fixed at creation, and an unbound token drops every page tool.
 3. In the widget config set `webmcp: { enabled: true }`.
-4. In the page, register tools on `document.modelContext` (Persona reads the registry at the start of each turn):
+4. In the page, install the polyfill and register tools on `document.modelContext`. `document.modelContext` is undefined on a browser without native support until something installs it, and Persona's fallback arrives only at the first dispatch. Persona reads the registry at the start of each turn. In this sample, `canOpenRecord` and `openRecord` are your app's functions:
    ```ts
-   document.modelContext.registerTool({
-     name: 'open_record',
-     description: 'Open the record detail view for a given record id',
-     inputSchema: {
-       type: 'object',
-       properties: { recordId: { type: 'string' } },
-       required: ['recordId'],
-     },
-     async execute({ recordId }) {
-       router.push(`/records/${recordId}`)
-       return { opened: recordId }
-     },
-   })
+   import { installWebMCP } from '@mcp-b/webmcp-polyfill'
+
+   installWebMCP() // keeps native support
+   const registration = new AbortController() // abort on unmount
+   const context = document.modelContext
+
+   if (context) {
+     await context.registerTool(
+       {
+         name: 'open_record',
+         description: 'Open the detail view for a record id. Use after the user picks a record.',
+         inputSchema: {
+           type: 'object',
+           properties: { recordId: { type: 'string' } },
+           required: ['recordId'],
+         },
+         annotations: { readOnlyHint: false, consequentialHint: false },
+         async execute({ recordId }, options) {
+           if (typeof recordId !== 'string' || !canOpenRecord(recordId)) {
+             return {
+               isError: true,
+               content: [
+                 {
+                   type: 'text',
+                   text: 'That record is unavailable. Ask the user to pick another.',
+                 },
+               ],
+             }
+           }
+           await openRecord(recordId, { signal: options?.signal })
+           return { content: [{ type: 'text', text: `Opened record ${recordId}.` }] }
+         },
+       },
+       { signal: registration.signal }
+     )
+   }
    ```
-5. Persona sends the registered tools with each turn, runs the model's calls in the page, and returns the results through Runtype. It shows an approval bubble per call unless `webmcp.autoApprove` allows it; reserve auto-approval for safe reads.
+5. Persona sends the registered tools with each turn, runs the model's calls in the page, and returns the results through Runtype. It shows an approval bubble per call unless `webmcp.autoApprove` allows it; reserve auto-approval for safe reads, and list consequential tools in the surface's `behavior.webmcp.requireConfirmFor` so they always confirm.
 
 **Why this matters**: the LLM gets real agency over the front-end without a server-side bridge for every operation. For tools that must run on your server instead, use SDK local tools (`runWithLocalTools` in `@runtypelabs/sdk`). See `persona-widget.md` for the full WebMCP setup.
 
