@@ -1,8 +1,6 @@
 ---
 name: tool-design-interface
 description: 'Design agent-facing tool names, descriptions, and parameter schemas; diagnose incorrect tool selection or inputs.'
-user-invocable: true
-argument-hint: '[tool whose name, description, or parameters to design]'
 ---
 
 # Tool Interface Design
@@ -40,6 +38,11 @@ cacheable, and parallelizable; say so (the MCP annotation `readOnlyHint: true`, 
 "Safe to retry" in the description). Command tools modify state; document
 irreversibility in the first sentence ("Permanently deletes the user. Irreversible.")
 and flag them destructive where the runtime supports it (`destructiveHint: true`).
+
+Set all four MCP hints explicitly. Unset, they default to `readOnlyHint: false`,
+`destructiveHint: true`, `idempotentHint: false`, and `openWorldHint: true`. A client
+treats hints as untrusted unless the server is trusted, so they never replace a
+permission check.
 Discovery tools (`list_tables`, `get_capabilities`, `who_am_i`) exist so the agent can
 find out what is possible before acting; their descriptions say "call this first".
 
@@ -89,9 +92,22 @@ Free-form strings invite invalid values and waste tokens on error handling.
 }
 ```
 
-Enums are self-documenting; still list the values in the description. Never assume
-the model obeys the schema: it can hallucinate an unsupported enum value or an
-out-of-range number. Validate early and fail with an error that lists the valid values.
+Enums are self-documenting; still list the values in the description. Without strict
+tool use, never assume the model obeys the schema: it can send an unsupported enum
+value or an out-of-range number. Validate early and fail with an error that lists the
+valid values.
+
+Strict tool use (`strict: true`) makes the provider sample only schema-valid inputs. It
+narrows what the schema can say:
+
+- Anthropic rejects `minimum`, `maximum`, `minLength`, and `maxLength` with a 400, and
+  accepts only a fixed list of string formats. Objects must set
+  `additionalProperties: false`.
+- OpenAI requires `additionalProperties: false` and lists every field in `required`.
+
+For a strict tool, move the range or length rule into the description and enforce it in
+code. Runtype does not send `strict` to providers, so validate inputs in the tool on
+Runtype.
 
 ### Fewer required parameters
 
@@ -120,7 +136,7 @@ When a tool takes alternative selectors, the description lists every valid combi
 ("Provide exactly one of `conversationId`, `channelName`, or `userEmails`"), the tool
 counts what was supplied at the start of execution, and a violation returns a clear
 error naming the valid options. Express the rule in the schema too where the runtime
-supports `oneOf`.
+supports `oneOf`. Check the provider's schema limits first.
 
 ### Say what is faster or cheaper
 
@@ -145,6 +161,10 @@ variation; it never widens a constrained enum or bypasses validation.
 
 - Verb-object names; the same verb means the same thing across the set (`list_*`
   returns pages, `get_*` returns one, `search_*` takes a query).
+- When tools span several services or resources, prefix the name with the service and
+  then the resource (`asana_search`, `asana_projects_search`). MCP allows 1 to 128
+  characters: letters, digits, `_`, `-`, and `.`. Runtype rewrites names before the
+  model sees them (see "Names as the model sees them" below), so test the final form.
 - One casing convention for every parameter in the set.
 - Parameter names say what the value is, not how it is used internally
   (`recipientEmail`, not `to`).
@@ -178,7 +198,8 @@ variation; it never widens a constrained enum or bypasses validation.
   as `who_am_i`, use `{ "type": "object", "properties": {}, "required": [] }`. Wrap a
   list input in an object property instead of making the root an array. On a runtime
   tool, the validator flags a string parameter that asks for JSON (named `json`,
-  `config`, `configuration`, or `payload`, or described as a JSON string) as
+  `config`, `configuration`, or `payload`, a name that ends in `json`, or a description
+  that calls it a JSON string) as
   `TOOL_PARAM_EMBEDDED_JSON_STRING`.
 - **Names as the model sees them.** Write tool names in lowercase `snake_case`. Before
   the model sees a name, Runtype lowercases it, replaces every character other than
@@ -204,7 +225,9 @@ variation; it never widens a constrained enum or bypasses validation.
   confirmation amount, an identifier only the user knows), declare it in
   `config.elicit: { message, requestedSchema, merge: "parameters" }` on an external or
   custom tool. Runtype removes those fields from the model's schema and asks the user
-  for them before the call runs. Each requested property is a string, number, integer,
+  for them before the call runs. Never request a secret this way: MCP forbids form
+  elicitation for passwords, API keys, access tokens, and payment credentials, and
+  requires a URL elicitation for them. Each requested property is a string, number, integer,
   or boolean. The final `parametersSchema` must set `additionalProperties: false`, and
   each requested property must match its definition there, including whether it is
   required.
