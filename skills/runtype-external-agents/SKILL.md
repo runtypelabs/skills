@@ -1,8 +1,6 @@
 ---
 name: runtype-external-agents
-description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, Pi, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
-user-invocable: true
-argument-hint: '[framework and what you want from Runtype: traces, evals, chat UI]'
+description: 'Connect agents that run outside Runtype (Flue, Cloudflare Agents SDK, Vercel AI SDK, LangGraph, OpenAI Agents SDK, Mastra, OpenClaw, Hermes, Pi, Pydantic AI, custom loops) through OpenTelemetry/OTLP trace export or an A2A or runtype-stream endpoint, to get runs, traces, eval capture, Persona chat, or surfaces; not Runtype-hosted execution.'
 ---
 
 # Runtype for agents that run elsewhere
@@ -37,11 +35,13 @@ Capability matrix to state plainly:
   content on the spans (`gen_ai.input.messages` / `gen_ai.output.messages`, or a supported
   framework's own attributes). `@runtypelabs/flue-otel` 0.5 and later sends it by default
   (`content: false` turns it off). Version 0.4 and earlier never did.
-- OpenClaw, Hermes, and the Pi coding agent send no conversation content by default. Set
-  `RUNTYPE_CAPTURE_CONTENT=true` for OpenClaw and Pi or
-  `RUNTYPE_OTEL_CAPTURE_CONTENT=true` for Hermes. If the plugin receives no
-  content, the run has no transcript to capture as an eval case. The Pi durable
-  binding sends content unless `content: false`.
+- OpenClaw, Hermes, the Pi coding agent, and both Cloudflare Agents SDK paths send no
+  conversation content by default. Set `RUNTYPE_CAPTURE_CONTENT=true` for OpenClaw and Pi,
+  `RUNTYPE_OTEL_CAPTURE_CONTENT=true` for Hermes, `{ storeMessages: true, storeTools: true }`
+  on `wrapAISDK`, or `content: { messages: true, ... }` on `@runtypelabs/cloudflare-agents`.
+  If the producer sends no content, the run has no transcript to capture as an eval case.
+  The Pi durable binding sends content unless `content: false`, and the Pydantic AI adapter
+  unless `content=False`.
 - Eval **re-run** (`run_eval_suite`) needs Runtype to be able to call the agent. An
   `external` agent over A2A works (recorded-tool replay cases are skipped).
   `runtype-stream` endpoints are not eval targets. Telemetry-only runs cannot be re-run.
@@ -87,8 +87,47 @@ at module scope in `app.ts`. Tell the user this also removes eval capture. Think
 the same destination. They store no payloads unless the agent class sets
 `storeMessages = true` and `storeTools = true`.
 
-**Cloudflare Agents SDK (`agents`).** Runtype has no dedicated adapter for it. Use the
-generic OpenTelemetry setup under **Any other OpenTelemetry-instrumented agent**.
+**Cloudflare Agents SDK (`agents`).** Pick one option:
+
+- Workers Observability destination (the dashboard **Cloudflare Agents** chip): a plain
+  `AIChatAgent` calling `streamText` emits no GenAI spans. Wrap `ai` once at module scope
+  with `wrapAISDK(ai, { storeMessages: true, storeTools: true })` from
+  `agents/observability/ai` and call the wrapped namespace from `onChatMessage`
+  (`storeMessages` and `storeTools` are off by default; without them, the run has no
+  transcript for eval capture). Configure the same Cloudflare Workers Observability Traces
+  destination as Flue above (`https://api.runtype.com/v1/otel/v1/traces` with
+  `Authorization: Bearer rt_...` and `x-runtype-agent-id: agent_...`, Workers Paid plan)
+  and set `observability.traces.destinations: ["runtype"]` in `wrangler.jsonc`
+  (`OTEL_EXPORTER_*` variables do not configure this path). Cloudflare can group turns or
+  split a paused request across traces, and Runtype creates one run per trace;
+  `tool_approval` spans show as read-only history without approving or resuming from
+  Runtype.
+- Durable OTLP adapter (`@runtypelabs/cloudflare-agents`, beta on npm): use when you need
+  durable per-request OTLP delivery with transcripts from your own Worker (validated
+  against `agents@0.22.0`, `@cloudflare/ai-chat@0.11.0`, and `ai@6.0.277`). It sends
+  OTLP/HTTP directly through a companion `RuntypeOtlpOutbox` Durable Object exported from
+  `@runtypelabs/cloudflare-agents/durable-object` and needs no Cloudflare trace exporter
+  (if Cloudflare tracing stays on for Workers diagnostics, those traces appear in **Logs**
+  without completing an adapter run). Export `RuntypeOtlpOutbox` from the Worker entry, add
+  its Durable Object binding (`AdapterTelemetryOutbox` -> `RuntypeOtlpOutbox`) and SQLite
+  migration (`new_sqlite_classes: ["RuntypeOtlpOutbox"]`) in `wrangler.jsonc`, and set
+  Worker-only bindings `RUNTYPE_AGENT_ID`, `RUNTYPE_API_KEY` (`TELEMETRY:WRITE`, via
+  `wrangler secret put`), and `RUNTYPE_BASE_URL` (`https://api.runtype.com`). In
+  `onChatMessage`, build
+  `const turn = { submissionId, conversationId, exchangeId, continuation: options?.continuation === true }`
+  from a stable application `submissionId`, separate `conversationId`, and `exchangeId`
+  (`options?.requestId`), then wire the companion outbox and wrap `streamText`:
+  `const identity = await createRunIdentity({ agentId: this.env.RUNTYPE_AGENT_ID, submissionId: turn.submissionId, conversationId: turn.conversationId })`,
+  `const outbox = this.env.AdapterTelemetryOutbox.get(this.env.AdapterTelemetryOutbox.idFromName(identity.traceId))`,
+  and
+  `return streamText(await observeStreamTextOptions(streamOptions, { turn, content, observer: createDurableObserver(outbox) })).toUIMessageStreamResponse()`
+  (full example: `https://docs.runtype.com/developer-guides/guides/reporting-external-telemetry#cloudflare-agents-sdk-adapter`).
+  Content is off by default; set
+  `content: { messages: true, instructions: true, tools: true, errors: false }` (with
+  optional `redact` and `maxBytes`, capped at 32 KiB per field) for transcripts and eval
+  capture (`instructions` follows `messages` unless set to `false`). Approval
+  continuations, client-executed tools, automatic subagent trees, and approving or resuming
+  from Runtype are not supported.
 
 **OpenClaw native plugin.** The plugin sends OTLP itself. Do not add a separate
 OpenTelemetry SDK. Review the package and its requested capabilities before
@@ -156,6 +195,20 @@ pi-durable and `PiHarness` are experimental/beta upstream.
 
 Report each Pi run through one producer only, or Runtype counts its tokens twice. Neither
 binding makes the agent callable from Runtype.
+
+**Pydantic AI (`runtype-pydantic-ai`, PyPI).** Supports `pydantic-ai` 1.90+ and 2.x and
+sends OTLP itself; do not add an exporter. `pip install runtype-pydantic-ai`, set
+`RUNTYPE_API_KEY` (`TELEMETRY:WRITE`) and `RUNTYPE_AGENT_ID`, then call
+`runtype_pydantic_ai.instrument()` once at startup; every `Agent` in the process is traced.
+`RUNTYPE_OTLP_URL` overrides the full trace URL. With Logfire, call `instrument()` after
+`logfire.configure()`, or pass `runtype_pydantic_ai.span_processor()` in
+`additional_span_processors`; any instrumentation format from 2 up works. Each top-level run
+is one Runtype run (`invoke_agent`, `chat`, `execute_tool`); a sub-agent called from a tool
+stays in the outer run. `instrument(agent_ids={...})` maps agent names to Runtype agents.
+Content is on by default, including any personal data in prompts; `content=False` or
+`ContentOptions` (per-kind switches, `max_chars`, `redact`) narrow it. Spans export in
+batches; call `force_flush()` on the returned handle in tests and short-lived handlers.
+**Connect an agent** has a **Pydantic AI** chip that creates the agent and key.
 
 **Flue on Node, Cloud Run, or another host.** Point exactly one Flue instrumentation at
 Runtype. Two would double the tokens and cost.
@@ -248,7 +301,7 @@ inside `externalConfig` are the same.
 - `retryCount` (0 to 10; default 3) retries the connection only, never a stream that has
   started.
 - `framework` is a descriptive label (`flue`, `langchain`, `vercel_ai`, `crewai`,
-  `cloudflare`, `autogen`, or `custom`). It does not change the wire protocol.
+  `cloudflare`, `autogen`, `mastra`, or `custom`). It does not change the wire protocol.
 
 **Where to register.** The dashboard's **Connect External** tab on the new-agent page
 registers A2A endpoints only. Register a `runtype-stream` agent with `create_agent` or
