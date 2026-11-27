@@ -1,8 +1,6 @@
 ---
 name: runtype-build-product
 description: 'Build, deploy, validate, or modify Runtype-hosted AI products, agents, flows, tools, surfaces, schedules, and eval suites, including from example templates.'
-user-invocable: true
-argument-hint: '[product idea or build task]'
 ---
 
 # Runtype Build Product
@@ -17,6 +15,20 @@ If the Runtype MCP tools are not available, run `runtype install-mcp` for the cu
 agent harness. Until the tools appear, call them through the CLI with `runtype mcp tools`
 and `runtype mcp call <tool>`. For sign-in and account setup, use the `runtype` skill.
 
+## Delegate or drive
+
+If the Runtype MCP server lists `delegate_to_runtype`, hand it the build when the work
+stays inside the Runtype account and takes four or more dependent calls (build, validate,
+test-run). On a host that runs it as an MCP task (Claude Code's main conversation), three
+calls is enough. Put the goal, every decision and target id, and the acceptance check in
+`task` up front, relay the `task_url`, and verify anything the digest marks untested.
+
+Drive the steps yourself (below) when the change is one or two calls or an edit to a
+known id, when the user wants to steer each step, when the result feeds code you are
+writing, or when it needs local files, secrets, provider keys, or client tokens. The
+delegate cannot see or create those. Only the self-driven path needs
+`get_build_instructions`.
+
 ## Required first calls
 
 Before designing or creating resources:
@@ -26,8 +38,9 @@ Before designing or creating resources:
 - Capability scoping: `get_build_instructions(task="explain-capabilities")`.
 
 For a product build, pass `focus` as a comma-separated list when the product clearly
-needs one of these areas: `commerce`, `embed`, `subagents`, `skills`, `search`,
-`retrieval`, `decision-models`, or `extraction-models`. The response includes those
+needs one of these areas: `commerce`, `embed`, `embed-fullscreen`, `subagents`,
+`skills`, `search`, `retrieval`, `decision-models`, `extraction-models`,
+`operational-design`, `agent-design`, or `prompt-authoring`. The response includes those
 full guides instead of pointers to them.
 
 Then fetch only the `get_platform_documentation` topics the task needs:
