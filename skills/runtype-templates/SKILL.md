@@ -1,8 +1,6 @@
 ---
 name: runtype-templates
 description: 'Create, validate, or share distributable Runtype Full Product Object (FPO) templates with import-time variables and pending secrets, or install a product from a runtype.com example, a use.runtype.com/now link, or a template URL.'
-user-invocable: true
-argument-hint: '[FPO or template task]'
 ---
 
 # Runtype Templates
