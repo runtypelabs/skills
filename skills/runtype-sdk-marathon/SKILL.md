@@ -1,8 +1,6 @@
 ---
 name: runtype-sdk-marathon
 description: 'Build source-controlled Runtype workflows with the SDK or CLI: config-as-code deploys from CI (ensure), save-and-run flows (upsert), long-running or multi-session agent runs with Marathon (runtype marathon or runtype agents task), and Marathon playbooks.'
-user-invocable: true
-argument-hint: '[SDK, CLI, or Marathon task]'
 ---
 
 # Runtype SDK and Marathon
@@ -30,7 +28,8 @@ Code-first modes:
 - **Ensure (config-as-code)**: converge a definition from your repo onto Runtype at deploy
   time without running it. Ensure never deletes a resource, and agents, flows, and skills
   keep a version of each change. The SDK has `ensure` for flows, agents, tools, skills,
-  evals, products, surfaces, and client tokens; `evals.ensure` replaces the suite's cases.
+  evals, products, surfaces, client tokens, collections, schedules, and question sets.
+  `evals.ensure` replaces the suite's cases.
   The CLI has `runtype agents ensure <file>` for a JSON agent definition; add
   `--expect-no-changes` to fail a CI job on drift.
 - **Virtual**: the definition is supplied per execution without creating a saved agent or
@@ -139,7 +138,7 @@ and model compatibility at startup.
 
 Models: `--model` sets the model for the run, `--planning-model` and `--execution-model`
 set it per phase, and `--fallback-model` is used when the primary model fails. Use routed
-model IDs such as `claude-sonnet-5` or `claude-haiku-4-5`. For `--max-tokens` and
+model IDs such as `claude-sonnet-5` or `claude-haiku-5-5`. For `--max-tokens` and
 `--temperature`, a playbook milestone value beats the CLI flag, and the CLI flag beats the
 playbook-level default.
 
