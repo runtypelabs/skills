@@ -1,8 +1,6 @@
 ---
 name: tool-design-output
 description: 'Design or audit what an agent tool returns: shape and trim payloads, paginate, report partial success, reference files and media, and add next-step hints. Use when tool output bloats the context window.'
-user-invocable: true
-argument-hint: '[tool whose result shape to design]'
 ---
 
 # Tool Output Design
@@ -66,7 +64,7 @@ After:
 
 ### Spend tokens deliberately (Token-Efficient Response)
 
-- Essential fields only. Codes over prose where a code is unambiguous.
+- Essential fields only.
 - Truncate long text fields at a documented length and say so (`"bodyTruncated": true`).
 - Count instead of listing when the agent needs the number, not the items.
 - Make the expensive part opt-in: `includeBody: false` by default, with the description
@@ -141,7 +139,15 @@ failures with reasons, summary counts, and a retry hint for exactly the failed i
 
 Files and blobs travel as typed URIs (`resource://files/abc`, with `contentType`,
 `sizeBytes`, and a name) that other tools resolve. The conversation carries the
-reference, not the bytes. Handle expired or missing references with a clear error.
+reference, not the bytes. Handle expired or missing references with a clear error. In
+MCP, return a `resource_link` content item for this.
+
+### Declare a structured result
+
+An MCP tool can declare `outputSchema` and return `structuredContent` that matches it.
+The spec says the tool should also return the same JSON as a text content item. Do so
+on Runtype: only `content` reaches the model, so a result with `structuredContent` and
+no text block gives the model nothing.
 
 ### One vocabulary across the set (Canonical Tool Model)
 
@@ -176,6 +182,8 @@ For error shapes, retry classification, and step failure defaults, see
   `transform-data` output, and `outputMapping` to select a dot path inside it. A
   `_`-prefixed variable is rejected, and a variable the flow never assigned fails the
   tool call. See [Flow tools](https://docs.runtype.com/developer-guides/guides/runtime-tools#flow-tools).
+- Only the `content` of an MCP result reaches the model, not `structuredContent`. Always
+  include a text content item.
 - If you run your own MCP server, apply these rules to its results. You cannot reshape
   a third-party MCP server's results, so prefer its narrower tools.
 - `paginate-api` is the platform's pagination step for upstream lists (cursor, offset,
